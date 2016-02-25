@@ -1,3 +1,10 @@
-task 1  boost::program_options learn
+task 1  boost::program_options learn 
+version boost-1.59
 The program_options library allows program developers to obtain program options, that is (name, value) pairs from the user, via conventional methods such as command line and config file
+doxygen 生成类图工具
+使用boost::program_options时,输入命令行参数不存在时，po::parse_command_line(argc, argv, desc)会抛出异常
+导致程序dump
+可以使用try{} catch(...){} 处理
+但是一般的服务器编程中是不用try{} catch(...){}处理的，使用try，不会产生dump文件，不会记录dump时函数的堆栈调用
 
+------done--------
