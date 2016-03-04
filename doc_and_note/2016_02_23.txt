@@ -10,3 +10,8 @@ http://blog.sina.com.cn/s/blog_a459dcf50102v7ft.html
 但是一般的服务器编程中是不用try{} catch(...){}处理的，使用try，不会产生dump文件，不会记录dump时函数的堆栈调用
 
 ------done--------
+
+2016 03 04 
+
+http://www.lua.org/manual/5.1/manual.html#2.5.8
+
