@@ -16,3 +16,9 @@ http://blog.sina.com.cn/s/blog_a459dcf50102v7ft.html
 http://www.lua.org/manual/5.1/manual.html#2.5.8
 
 
+2016 03 07 done metable
+setmetatable
+rawset rawget
+
+2016 0307  lua coroutines
+
