@@ -1,8 +1,10 @@
 task 1  boost::program_options learn 
 version boost-1.59
 The program_options library allows program developers to obtain program options, that is (name, value) pairs from the user, via conventional methods such as command line and config file
-doxygen 生成类图工具
+doxygen 和 Graphviz 生成类图工具
 http://blog.sina.com.cn/s/blog_a459dcf50102v7ft.html
+Doxygen是一种开源跨平台的，以类似JavaDoc风格描述的文档系统，完全支持C、C++、Java、Objective-C和IDL语言，部分支持PHP、C#。注释的语法与Qt-Doc、KDoc和JavaDoc兼容。Doxygen可以从一套归档源文件开始，生成HTML格式的在线类浏览器，或离线的LATEX、RTF参考手册。
+
 
 使用boost::program_options时,输入命令行参数不存在时，po::parse_command_line(argc, argv, desc)会抛出异常
 导致程序dump
