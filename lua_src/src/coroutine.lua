@@ -85,4 +85,34 @@ print("--------xxxxxx-------------")
 
 print("main ", coroutine.resume(co4, "x", "y"))
 print("--------end---------")
+--[[
 
+first coroutine out	1	10
+foo function print	2
+main  	true	4
+--------xxx----------
+second  coroutine out	r
+main 	true	11	-9
+--------xxxx--------------
+third coroutine ,	x	y
+main 	true	10	coroutine over !!!
+--------xxxxxx-------------
+main 	false	cannot resume dead coroutine
+
+以上实例接下如下：
+
+    调用resume，将协同程序唤醒,resume操作成功返回true，否则返回false；
+    协同程序运行；
+    运行到yield语句；
+    yield挂起协同程序，第一次resume返回；（注意：此处yield返回，参数是resume的参数）
+    第二次resume，再次唤醒协同程序；（注意：此处resume的参数中，除了第一个参数，剩下的参数将作为yield的参数）
+    yield返回；
+    协同程序继续运行；
+    如果使用的协同程序继续运行完成后继续调用 resume方法则输出：cannot resume dead coroutine
+
+resume和yield的配合强大之处在于，resume处于主程中，它将外部状态（数据）传入到协同程序内部；
+而yield则将内部的状态（数据）返回到主程中。
+
+
+--]]
+--------------------------------
