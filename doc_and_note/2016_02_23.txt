@@ -21,6 +21,8 @@ http://www.lua.org/manual/5.1/manual.html#2.5.8
 2016 03 07 done metable
 setmetatable
 rawset rawget
+http://blog.csdn.net/q270274978/article/details/42213593
+
 
 2016 0307  lua coroutines
 
@@ -42,4 +44,5 @@ coroutine.running()	返回正在跑的coroutine，一个coroutine就是一个线
 ---------2016-03-10-------
 http://www.runoob.com/lua/lua-coroutine.html
 next: producter - customer model
+
 
