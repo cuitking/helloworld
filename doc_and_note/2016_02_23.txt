@@ -42,3 +42,4 @@ coroutine.running()	返回正在跑的coroutine，一个coroutine就是一个线
 ---------2016-03-10-------
 http://www.runoob.com/lua/lua-coroutine.html
 next: producter - customer model
+

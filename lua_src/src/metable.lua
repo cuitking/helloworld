@@ -200,3 +200,13 @@ print(a == b) -- false
 
 --]]
 
+
+----as class ---------
+Parent = {}
+
+function Parent:new()
+	local newParent = { house = "white house"}
+	self.__index = self
+	return setmetatable(newParent, self)
+end
+
