@@ -46,3 +46,9 @@ http://www.runoob.com/lua/lua-coroutine.html
 next: producter - customer model
 
 
+-----------------mongodb------------
+复制一个collection 到另一个集合的collection
+use sourcedatabase;
+var docs=db.sourcetable.find();
+use targetdatabase;
+docs.forEach(function(doc) { db.targettable.insert(doc); });
