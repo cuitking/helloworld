@@ -16,4 +16,13 @@ sudo /etc/init.d/ssh start
 ssh username@192.168.1.112 username为192.168.1.112 机器上的用户，需要输入密码。
 断开连接：exit
 
-----------------------------------------------------------------
+-------------------------配置eclipse for c++ in linux ubuntu 14.04--------------------------------------
+
+下载jdk，eclipse
+在.bashrc中加入
+export JAVA_HOME=/usr/local/jdk1.8.0_73
+export PATH=$JAVA_HOME/bin:$PATH
+export PATH=/usr/local/eclipse:$PATH
+
+alias eclipse='nohup eclipse >/dev/null &'
+
