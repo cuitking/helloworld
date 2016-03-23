@@ -1,0 +1,33 @@
+-------------------boost智能指针-------------------
+boost::shared_ptr 使用boost::make_shared初始化
+boost::shared_ptr构造函数会执行两次内存申请，而boost::make_shared则执行一次。
+boost::shared_ptr<A> p1 = boost::make_shared<A>();
+boost::shared_ptr<A> p2(new A);
+boost::shared_ptr<A> p3 = new A();
+A* a = std::move(new A());
+boost::shared_prt内部会有一个计数器（控制块，用来管理数据）和一个指针，指向数据。因此在执行 Boost::shared_ptr<A> p2(new A) 
+的时候，首先会申请数据的内存，然后申请内控制块，因此是两次内存申请，而 boost::make_shared<A>() 
+则是只执行一次内存申请，将数据和控制块的申请放到一起
+C++11下面,由于有move语义,O2会导致make_shared比new快将近1倍;而O0和C++03的结果无显著差别,说白了,debug版的还是慢很多.
+
+boost::weak_ptr
+weak_ptr主要有两个用途：
+
+用来记录对象是否存在了
+用来解决shared_ptr环形依赖问题
+当要使用weak_ptr来获取shared_ptr的时候，需要得到指向数据的shared_ptr数目，而这正是通过user-count来得到的，而这块内存是分配
+在shared_ptr中的，自然有使用的，那就不会释放了，即使数据引用数为0了，但是由于make_shared（）使得数据和控制块一起分配，自然
+只要有weak_ptr指向了控制块，就不会释放整块内存了。
+shared_ptr<int> p(new int(5));
+weak_ptr<int> q(p);
+
+// some time later
+
+if(shared_ptr<int> r = q.lock())
+{
+    // use *r
+}
+如果在多线程中，在if之后，但是在使用*r之前，另一个线程对p进行了reset，那次后在使用*r则会抛出异常
+在使用weak_ptr的时候，应使用lock方法转换成shared_ptr后使用。
+auto global_pack(boost::make_shared<DEFAULT_PACKER>());
+boost::shared_ptr global_pack(boost::make_shared<DEFAULT_PACKER>());
