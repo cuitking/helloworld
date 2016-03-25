@@ -30,4 +30,7 @@ if(shared_ptr<int> r = q.lock())
 如果在多线程中，在if之后，但是在使用*r之前，另一个线程对p进行了reset，那次后在使用*r则会抛出异常
 在使用weak_ptr的时候，应使用lock方法转换成shared_ptr后使用。
 auto global_pack(boost::make_shared<DEFAULT_PACKER>());
-boost::shared_ptr global_pack(boost::make_shared<DEFAULT_PACKER>());
+boost::shared_ptr<DEFAULT_PACKER> global_pack(boost::make_shared<DEFAULT_PACKER>());
+
+
+
