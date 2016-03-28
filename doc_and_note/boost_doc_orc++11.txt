@@ -32,5 +32,75 @@ if(shared_ptr<int> r = q.lock())
 auto global_pack(boost::make_shared<DEFAULT_PACKER>());
 boost::shared_ptr<DEFAULT_PACKER> global_pack(boost::make_shared<DEFAULT_PACKER>());
 
+std::for_each 
+template<class InputIterator, class Function>
+  Function for_each(InputIterator first, InputIterator last, Function fn)
+{
+  while (first!=last) {
+    fn (*first);
+    ++first;
+  }
+  return fn;      // or, since C++11: return move(fn);
+}
+返回的是迭代器中的元素.不是迭代器
+std::vector<int> veint{1,2,3,4,5,6};
+std::for_each(veint.begin(),veint.end(),[](int sum){ std::cout << sum << std::endl;});
+std::for_each(veint.begin(),veint.end(),[](int& sum){ sum += 50;});
+
+std::for_each()的返回值
+template<class _InIt,
+	class _Fn1> inline
+	void _For_each(_InIt _First, _InIt _Last, _Fn1& _Func)
+	{	// perform function for each element
+	for (; _First != _Last; ++_First)
+		_Func(*_First);
+	}
+
+template<class _InIt,
+	class _Fn1> inline
+	_Fn1 for_each(_InIt _First, _InIt _Last, _Fn1 _Func)
+	{	// perform function for each element
+	_DEBUG_RANGE(_First, _Last);
+	_DEBUG_POINTER(_Func);
+	_For_each(_Unchecked(_First), _Unchecked(_Last), _Func);
+
+	return (_STD move(_Func));
+	}
+它的返回值就是：std::move(fn). 什么意思，就是返回for_each(begin, end, fn)中的第三个参数fn的move结果，也就是说，如果fn有移动
+构造函数，那么返回值就是fn的移动构造结果，否则返回值就是fn的副本（copy构造结果）
+
+----------c++11 lambda表达式------------------
+lambda表达式可以方便的构造匿名函数.如果代码中存在大量的小函数,而这些函数一般只被调用一次。不妨将它们重构成lambda表达式
+[capture] (params) mutable exception attribute -> ret {body}
+[capture] (params) ->ret {body}
+[capture] (params) {body}
+[capture] {body}
+
+其中
+
+(1) 是完整的 lambda 表达式形式，
+(2) const 类型的 lambda 表达式，该类型的表达式不能改捕获("capture")列表中的值。
+(3)省略了返回值类型的 lambda 表达式，但是该 lambda 表达式的返回类型可以按照下列规则推演出来：
+如果 lambda 代码块中包含了 return 语句，则该 lambda 表达式的返回类型由 return 语句的返回类型确定。
+如果没有 return 语句，则类似 void f(...) 函数。
+省略了参数列表，类似于无参函数 f()。
+mutable 修饰符说明 lambda 表达式体内的代码可以修改被捕获的变量，并且可以访问被捕获对象的 non-const 方法。
+
+exception 说明 lambda 表达式是否抛出异常(noexcept)，以及抛出何种异常，类似于void f() throw(X, Y)。
+
+attribute 用来声明属性。
+
+另外，capture 指定了在可见域范围内 lambda 表达式的代码内可见得外部变量的列表，具体解释如下：
+
+[a,&b] a变量以值的方式呗捕获，b以引用的方式被捕获。
+[this] 以值的方式捕获 this 指针。
+[&] 以引用的方式捕获所有的外部自动变量。
+[=] 以值的方式捕获所有的外部自动变量。
+[] 不捕获外部的任何变量。
+此外，params 指定 lambda 表达式的参数
+
+lambda函数的类型是std::function
+std::function<int(void)> test_func=[](){ return 2;}
+
 
 
