@@ -6,12 +6,18 @@ st_server_base 中的start 是在 st_asio_wrapper_object_pool中 class st_object
 2.调用inner_packer()和inner_unpacker()修改打包解包器；
 inner_packer()实现于class st_socket
 class echo_socket : public st_server_socket_base { class st_server_socket_base : public st_tcp_socket_base<
-Socket, Packer, Unpacker> { class st_tcp_socket_base: public st_socket<Socket, Packer, Unpacker>::inner_packer(); }}
+Socket, Packer, Unpacker> { class st_tcp_socket_base:(::inner_unpacker()) public st_socket<Socket, Packer, Unpacker>
+::inner_packer(); }}
 
+3.打包解包器应该要支持原始消息的打包（此时只做数据拷贝，不添加任何数据），如果考虑通用性的话。pack_msg接口的最后一个参数用
+于表达是否是打原始消息包（即，pack_msg是从send_msg还是从send_native_msg调用的)
+字节序问题：转化字节序是为了同一不同的机器对int32四个字节存储顺序不同，而导致数据的误差。字符串作为单字节在网络传播。
+网络字节序不会影响传播。
 
-3.打包解包器应该要支持原始消息的打包（此时只做数据拷贝，不添加任何数据），如果考虑通用性的话。pack_m个参数用于表达是否是打
-原始消息包（即，pack_msg是从send_msg还是从send_native_
-4.接收缓存必须放在解包器之内，当收到数据时，st_asio_wrapper会调用解包器的pars解包器应在结果通过msg_ca
+packer.pack_msg() 返回的是std::basic_string 默认的消息格式是：长度(2)+消息内容
+4.接收缓存必须放在解包器之内，当收到数据时，st_asio_wrapper会调用解包器的pars解包器应在结果通过msg_can参数返回出去；
+inner_unpacker()在class st_tcp_socket_base 中实现.
+
 5.调用parse_msg之后，wrapper马上开始下一次数据接收，此时会调用解包器的prepare_next_recv接回一个缓存（boost 的muffe
 6.重写completion_condition接判断什么时候可以解析消息了（即调用parse_msg），显然，至消息之后，就可以解析了；返回0代表可以解
 析消息了，返回其它值代表至少还需要多少字节，才能解析；这些说看一下默认的解包器的实现就清楚了。
