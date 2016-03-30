@@ -18,7 +18,29 @@ packer.pack_msg() 返回的是std::basic_string 默认的消息格式是：长�
 4.接收缓存必须放在解包器之内，当收到数据时，st_asio_wrapper会调用解包器的pars解包器应在结果通过msg_can参数返回出去；
 inner_unpacker()在class st_tcp_socket_base 中实现.
 
+在st_server_base::accept_handler()中调用client_ptr->start()；(client_ptr = create_object(boost::ref(st_server_base)); 返回client_ptr是什么？？？？？)
+-> 调用st_socket::start(), -> 调用st_server_socket_base::do_start(),-> st_tcp_socket_base::do_recv_msg()
+中注册异步读事件的回调unpacker::completion_condition和st_tcp_socket_base::recv_handler()
+async_read(stream, buffer [, completion] ,handler)：这个方法异步地从一个流读取。结束时其处理方法被调用。
+处理方法的格式是：void handler(const boost::system::error_ code & err, size_t bytes)
+;。你可以选择指定一个完成处理方法。完成处理方法会在每个read操作调用成功之后调用，然后告诉Boost.Asio 
+async_read操作是否完成（如果没有完成，它会继续读取）。它的格式是：size_t completion(const boost::system::error_code& err, 
+size_t bytes_transfered) 。当这个完成处理方法返回0时，我们认为read操作完成；如果它返回一个非0值，它表示了下一个async_read_s
+ome操作需要从流中读取的字节数。
+接收缓存在unpacker::raw_buff 中,completion_condition() 判读读取的长度是否为包中的长度，如果是则调用handler方法.
+st_tcp_socket st_tcp_socket_base::recv_handler() 收到消息回调后，以便让unpacker尝试解析消息，
+成功解析出来的消息通过msg_can返回。
+boost::array<char, MSG_BUFFER_SIZE> raw_buff; ->msg_pos_can ->temp_msg_buffer;
+boost::container::list<std::pair<const char*, size_t>> msg_pos_can;
+out_container_type(boost::container::list<std::string>) temp_msg_buffer(msg_can);
+typedef typename Unpacker::container_type out_container_type;
+typedef boost::container::list<msg_type> container_type;
+msg_type = std::string
+
+
 5.调用parse_msg之后，wrapper马上开始下一次数据接收，此时会调用解包器的prepare_next_recv接回一个缓存（boost 的muffe
 6.重写completion_condition接判断什么时候可以解析消息了（即调用parse_msg），显然，至消息之后，就可以解析了；返回0代表可以解
 析消息了，返回其它值代表至少还需要多少字节，才能解析；这些说看一下默认的解包器的实现就清楚了。
 
+一但使用自定义数据结构，二次开发者不得不自己处理粘包，分包，解包，数据缓存等工作，也就是实现自己的打包解包器。关于打包解包
+器的更多信息，请参考st_asio_wrapper自带的packer和unpacker。
