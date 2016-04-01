@@ -103,4 +103,14 @@ lambda函数的类型是std::function
 std::function<int(void)> test_func=[](){ return 2;}
 
 
+boost::container::list::splice( iterator position, list<T,Allocator>& x);
+boost::container::list::splice( iterator position, list<T,Allocator>& x, iterator i);
+boost::container::list::splice( iterator position, list<T,Allocator>& x, iterator first, iterator last);
+函数说明：在list间移动元素：
+将x的元素移动到目的list的指定位置，高效的将他们插入到目的list并从x中删除。
+目的list的大小会增加，增加的大小为插入元素的大小。x的大小相应的会减少同样的大小。
+前两个函数不会涉及到元素的创建或销毁。第三个函数会。
+指向被删除元素的迭代器会失效。
+参数：position 目的list的位置，用来标明 插入位置 x ,源list、
+first,last  x里需要被移动的元素的迭代器。区间为[first, last). 包含first指向的元素，不包含last指向的元素。
 
