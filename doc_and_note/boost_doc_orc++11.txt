@@ -114,3 +114,7 @@ boost::container::list::splice( iterator position, list<T,Allocator>& x, iterato
 参数：position 目的list的位置，用来标明 插入位置 x ,源list、
 first,last  x里需要被移动的元素的迭代器。区间为[first, last). 包含first指向的元素，不包含last指向的元素。
 
+boost::asio::io_service.post([this]() {ST_THIS msg_handler();}); 开启另一个线程.执行msg_handler();
+
+
+

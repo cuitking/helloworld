@@ -159,5 +159,69 @@ buffer（这里专指定义了FORCE_TO_USE_MSG_RECV_BUFFER宏的情况，通过o
 可以实现在st_server_socket中调用st_server任意接口的目的（在on_recv_error中调用del_client就是这一类应用，二次开发者可做更多
 的控制，在asio_server中有演示）。
 
+十七.
+前面我们说过，在on_msg_handle里面处理自己的业务，就不会阻塞消息的接收，那么实际情况真是这样吗？答案是否定的，想象一下，
+如果两端都阻塞在on_msg_handle，虽然的确是不影响数据收发，但消息的派发是停止了的，这样终究会造成接收缓存溢出（前面说了，
+接收缓存溢出时将停止数据接收），换句话讲，死锁还是来了（只是比在on_msg里面阻塞的情况迟了一点，要等到接收缓存满了才会死锁）。
+那么怎么办呢？答案是调用post_msg（看参看第十七节）。
+
+如果必须要处理一个耗时业务，如何避免影响所有连接，包括自己的数据收发呢，推荐的方法是，当要处理耗时业务时，
+在on_msg_handler里面开一个线程，然后马上退出，耗时业务在线程中处理，处理完了自动退出，这就带来了一个问题，
+这个耗时业务还没处理完的时候，后面的消息可能已经到达，这样出现了消息顺序不对应的问题，就是说你无法按顺序处理消息了
+（绝大多数情况下，顺序处理消息是必须的），此时，暂停消息派发就有用了，可以很容易的写出如下伪代码：
+void run(shared_ptr<...> client_ptr)
+{
+        ...
+        client_ptr->suspend_dispatch_msg(false);
+}
+
+virtual void on_msg_handle(msg_type& msg)
+{
+        suspend_dispatch_msg(true);
+        thread t(bind(&run, shard_from_this());
+}
+
+这样就做到了既不影响所有连接上的数据收发，又做到了消息的顺序处理。当然，如果你需要非常频繁的执行以上代码，
+最好的办法还是直接为st_service_pump多指定一些线程，多指定多少，要看你的业务，如果平均来说，有两个on_msg_handle
+被阻塞处理耗时业务，那么多指定两个线程即可，同样可以做到不影响所有连接上的数据收发，还简单很多。如果你的耗时业务
+是非常稀少的执行，那么上面的代码值得你一试。
+还有一种情况跟耗时业务差不多，就是如果我暂时不方便处理业务怎么办？典型的例子就是：我的业务是将消息发送到一个队列
+里面供其它模块使用，但是这个队列满了，我只知道它会在某个时候变得可用，但不知道要等多久，这怎么办呢？方法之一当然
+就像上面说的一种，开个线程等待队列可用，这期间一直暂停消息的派发。这个方法显得有些怪异，因为开线程其实是用于等待，
+而不一定马上能处理消息。为此，在2015.2.9日及其以后版本中新增加一个功能——消息延迟派发。这一功能显然的需要消息接收缓存，
+所以要么on_msg返回false，要么定义FORCE_TO_USE_MSG_RECV_BUFFER宏，关键点在on_msg_handle函数里面，如果你发现目前暂时
+不方便处理消息，可以在on_msg_handle里面直接返回false，这样的效果就是，st_socket会延迟一小段时间之后，尝试再次派发消息，
+这就完美解决了前面所提出的问题（而不再需要开线程了，在这次更新之前，要想解决这个问题，要么开线程当成耗时业务处理，
+要么阻塞一个线程等待直接消息可以处理为止），具体在asio_server里面，也有类似用法，大家可参考
+
+十七：各种消息发送函数之间的区别
+现在消息发送函数有：send_msg系列（包括send_msg, send_native_msg, broadcast_msg, broadcast_native_msg），
+safe_send_msg系列（包括safe_send_msg, safe_send_native_msg, safe_broadcast_msg, safe_broadcast_native_msg），
+post_msg系列（包括post_msg, post_native_msg），它们之间的区别是：
+
+这三个系列的消息发送函数，都有一个can_overflow参数，如果它为true，则它们的行为都一样，即马上成功，但缓存大小不可控，
+用不好可能会耗尽内存而崩溃；当can_overflow为flase且send buffer足够的时候，它们也有完全一样的行为，即马上成功且缓存大小可控；
+下面说说can_overflow为false且send buffer溢出的情况，此时send_msg马上返回失败，safe_send_msg等待直到send buffer可用，
+post_msg马上成功，但会暂停消息的派发。
+
+那么他们的使用场景呢？send_msg用在哪里都可以，只是你要处理失败的情况，某些时候可能会很麻烦（大家可以看看file_server
+这个demo，里面有对send_msg失败的处理方法）；safe_send_msg用于在on_msg和on_msg_handle之外发送消息（千万不要在on_msg和
+on_msg_handle内部使用它）；post_msg用于在on_msg和on_msg_handle之内发送消息（千万不要在on_msg和on_msg_handle外部使用它）。
+另外，当can_overflow为true的时候，一定要小心，你必须保证send buffer的大小在可控的范围之内。
+请大家暂时记住这些用法，相信你以后会明白它们的来龙去脉。
+那么post_msg到底有什么作用？前面说过了，它只能用在on_msg或者on_msg_handle里面，它可以保证每次都成功，而且不需要等待，
+那岂不是缓存大小不可控了？答案是否定的，post_msg只是造成暂时的缓存溢出，但不会不可控，st_socket内部是这样实现的（在
+消息缓存不够的时候，如果足够，则与send_msg和safe_send_msg完全一样，前面说过了）：post_msg其实是把消息压入到了另外一
+个消息缓存里面，只要这个缓存非空，就会暂停消息的派发，所以on_msg和on_msg_handle就不会继续的被调用，直到这个缓存里面
+所有的消息成功的转移到普通的消息缓存为止。所以只要你保证只在on_msg和on_msg_handle里面使用post_msg，则消息缓存的大小
+始终是可控的。这个函数完全是为防止on_msg和on_msg_handle被阻塞而服务的。总之大家记住，如果on_msg和on_msg_handle（或者
+其它运行在service线程中的回调函数，比如on_timer）被阻塞，就要非常小心了，一定要认清楚解除阻塞的条件，如果条件是必须要
+缓存变得可用（比如你调用了safe系列消息发送函数），那死锁的风险是一定存在的（它要么直接造成某一对连接死锁，要么耗尽所有
+service线程而让所有的连接死锁）。如果解除阻塞的条件与st_socket的缓存可用性无关，那肯定没有问题，肯定是有限的阻塞，
+而不是无限的阻塞——死锁。
+
+
+
+
 
 
