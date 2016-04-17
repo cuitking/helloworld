@@ -1,0 +1,16 @@
+1.下载jdk
+2.ADT_BUNDLE下载
+3.android_sdk下载
+
+创建完成第一个新项目 baba
+解决问题：
+1.eclipse 出现 "running andriod lint has encountered a problem"
+在打开eclipse会出现
+打开Preferences，在Windows下面应该在WIndow-->Preferences.在mac下在Eclipse-->偏好设置。
+选择Android-->Lint Error Checking.
+
+adt_bundle 开发环境：
+E:\BaiduYunDownload\adt-bundle-windows-x86_64-20140702\
+adt-bundle-windows-x86_64-20140702\eclipse
+-------------------2016.04.18----------------------
+
