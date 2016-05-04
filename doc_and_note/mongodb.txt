@@ -35,6 +35,26 @@ key-value数据库的主要特点即使具有极高的并发读写性能，Redis
 mongoDB是一个可扩展，开源，表结构自由，用c++语言编写且面向文档的数据库。是一个介于关系型数据库和非关系型数据库之间的产品。
 
 
+-----------------mongodb------------
+复制一个collection 到另一个集合的collection
+use sourcedatabase;
+var docs=db.sourcetable.find();
+use targetdatabase;
+docs.forEach(function(doc) { db.targettable.insert(doc); });
+
+
+连接mongodb数据库
+mongo.exe 172.27.1.5:27017
+
+
+help:显示帮助
+
+show dbs; 显示数据库
+use <db_name> ;切换数据库  // use GameConfig-hf;
+
+
+
+
 
 
 
