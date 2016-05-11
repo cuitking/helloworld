@@ -1,0 +1,37 @@
+1.下载jdk
+2.ADT_BUNDLE下载
+3.android_sdk下载
+
+创建完成第一个新项目 baba
+解决问题：
+1.eclipse 出现 "running andriod lint has encountered a problem"
+在打开eclipse会出现
+打开Preferences，在Windows下面应该在WIndow-->Preferences.在mac下在Eclipse-->偏好设置。
+选择Android-->Lint Error Checking.
+
+adt_bundle 开发环境：
+E:\BaiduYunDownload\adt-bundle-windows-x86_64-20140702\
+adt-bundle-windows-x86_64-20140702\eclipse
+-------------------2016.04.18----------------------
+设置eclipse编码格式：
+
+window->preferences->General->Workspace->Text file encoding
+
+eclipse 显示行号:
+window->preferences->General->Editors->Text Editors->勾选Show line numbers;
+
+eclipse 注释代码快捷键：
+选中待注释的行
+ctrl+shift+c 注释  ctrl+/ 注释
+ctrl+shift+/ 注释/**/ 取消注释 ctrl+shift+\
+
+
+eclipse 调试：
+1.打断点
+(1) 鼠标双击行号左侧位置
+(2) run->Toggle Breakpoint
+(3) Ctrl+Shift+b
+
+极客学院安卓Android全套最新视频教程\1.环境搭建\独立开发第一个“Hello World”\
+2.Android 第一个项目“Hello eoe” -《Android开发环境搭建基础入门视频教程-极客学院》课程 - 极客学院
+-------------2016.04.20---------------------------------------
