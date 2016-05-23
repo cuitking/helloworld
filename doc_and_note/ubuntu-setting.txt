@@ -32,5 +32,7 @@ alias eclipse='nohup eclipse >/dev/null &'
 ----------------------------linux autoconf/automake 教程--------------------------
 http://www.ibm.com/developerworks/cn/linux/l-makefile/
 
+---------------------unix gcc 创建和使用静态库,动态库------------------
+http://www.cnblogs.com/dyllove98/archive/2013/06/25/3155599.html
 
 
