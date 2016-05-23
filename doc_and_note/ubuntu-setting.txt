@@ -26,3 +26,11 @@ export PATH=/usr/local/eclipse:$PATH
 
 alias eclipse='nohup eclipse >/dev/null &'
 
+
+
+
+----------------------------linux autoconf/automake 教程--------------------------
+http://www.ibm.com/developerworks/cn/linux/l-makefile/
+
+
+
