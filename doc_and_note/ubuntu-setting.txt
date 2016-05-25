@@ -25,4 +25,95 @@ export PATH=$JAVA_HOME/bin:$PATH
 export PATH=/usr/local/eclipse:$PATH
 
 alias eclipse='nohup eclipse >/dev/null &'
+------------------------------secureCRT  linux 传输文件--------------------------
+
+1.安装 lrzsz  ubuntu : sudo apt-get install lrzsz  centos: yum install lrzsz
+
+2.输入 rz 上传文件
+3.输入 sz 使用sz命令。sz加上文件完整路径 下载到secureCRT设置的默认目录
+
+secureCRT设置 session -> properties ->X/Y/Z modem
+
+----------------windows TortoiseGit 的ppk 文件转换成 openssh文件(ubuntu 14.04) ----------------------------------
+
+1. 安装puttygen : sudo apt-get install putty-tools
+2. ppk 文件转化 openssh key 
+	private key:
+	puttygen kk2_git.ppk -0 private-openssh -o id_rsa
+	public key:
+	puttygen kk2_git.ppk -O public-openssh -o id_rsa.pub
+
+------------------------ubuntu 安装scons---------------------------
+
+scons安装和使用
+
+1. scons是神马？
+ 
+scons是linux下的自动构建工具，类似cmake。
+ 
+2. 安装
+ 
+wget http://prdownloads.sourceforge.net/scons/scons-2.2.0.tar.gz .
+ 
+tar zxvf scons-2.2.0.tar.gz
+ 
+cd scons-2.2.0
+ 
+python setup.py install
+ 
+正常情况下，scons将安装到${PYTHON_INSTALL_DIR}/bin/下
+ 
+3. hello world程序
+ 
+三个文件hello.h hello.c main.c hello.h定义函数void hello(); hello.c中实现该函数，main.c中调用该函数。
+ 
+编写SConstruct，scons构建时使用。内容如下：
+ 
+Program('hello', ['hello.c', 'main.c'])
+ 
+开始构建 
+ 
+scons: Reading SConscript files ...
+scons: done reading SConscript files.
+scons: Building targets ...
+gcc -o hello.o -c hello.c
+gcc -o main.o -c main.c
+gcc -o hello hello.o main.o
+scons: done building targets.
+
+---------------------------ubuntu 安装protobuf----------------------------------
+http://blog.csdn.net/xocoder/article/details/9155901
+
+
+--------------------------vs code 配置c++开发环境 ubuntu------------------------------
+https://www.zhihu.com/question/30037013
+
+-------------------------------
+
+
+
+linux系统下怎么安装.deb文件？
+
+deb 是 ubuntu 、debian 的格式。
+rpm 是 redhat 、fedora 、suse 的格式。
+
+他们不通用（虽然可以转换一下）。
+
+deb是debian发行版的软件包
+ubuntu是基于debian 发行的 所有可以用
+
+.deb是solaris系统下的安装包后缀名。安装方法如下
+
+cd 到安装包的目录
+
+dpkg -i 安装包名字
+
+如果你使用的是red hat linux，然后运行以下命令安装
+
+cd 到安装包的目录
+rpm -ivh 安装包名字
+
+----------------------------------
+
+
 
