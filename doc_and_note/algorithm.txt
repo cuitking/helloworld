@@ -1,0 +1,2 @@
+1.快速乘法/幂 算法详解
+http://blog.csdn.net/maxichu/article/details/45459715
