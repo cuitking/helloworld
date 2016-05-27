@@ -116,5 +116,98 @@ first,last  x里需要被移动的元素的迭代器。区间为[first, last). �
 
 boost::asio::io_service.post([this]() {ST_THIS msg_handler();}); 开启另一个线程.执行msg_handler();
 
+-------------------boost::bind-------------------------
+对自由方法来说，直接boost::bind(函数名, 参数1，参数2，...)
+
+对类方法来说，直接boost::bind(&类名::方法名，类实例指针，参数1，参数2）
+
+bind &function 
+bind绑定一个函数及其参数.function 是类和模板的组合,它定义的对象可以指向一个函数(包装一个函数 )
+，类似一个函数指针。既可以直接指向一个函数也可以接收bind的返回值。
+bind 返回一个函数对象
+
+void print(int i, int j) { cout << i << " \t " << j << endl;}
+boost::bind(print,3,_1)(4);//使用占位符给调用函数传参占个位置：传入4
+
+要用bind绑定类类中的成员函数时，第一个参数表示成员函数的所在类的地址，第二个参数表示具体调用此成员函数的对象。
+后面的参数跟bind用于一般函数的用法一致。
+
+class Myfun
+{
+public:
+        void print( int i, int j )
+        {  
+                cout << i<< "\t" << j << "\n";
+       }
+};
+ 
+Myfun f;
+boost::bind(&Myfun::print,f, 3, 4)();
+ 
+要用bind绑定类类中的成员函数时，第一个参数表示成员函数的所在类的地址，第二个参数表示具体调用此成员函数的对象。
+后面的参数跟bind用于一般函数的用法一致
+
+boost::function 
+一般函数
+若函数定义的形式为：type fun_name( type1 i, type2  j){…}
+则使用function指向此函数：function<type(type1 i, type2 j)> tf;
+tf=fun_name;
+调用函数：tf( 1, 2 );
+
+function模板内"<>"所要使用的类型要和函数的一致：type表示所指函数的返回值类型，type1,type2是所指函数参数的类型。
+ 
+void  print( int i, int j )
+{
+      cout << i << "\t" << j <<"\n";
+ }
+ 
+boost::function<void(inti, int j)> tf;
+tf =print;
+tf(3, 4);
+输出3       4
+成员函数
+要使用function指向一个类的成员函数时，不管是在指向此成员函数还是调用此成员函数都要让function对象知道其地址（声明function对象时就声明了地址部分）。
+调用成员函数时还只能调用某一个对象的成员函数。
+class Myfun
+{
+public:
+        void print( int i, int j )
+       {
+                cout << i<< "\t" << j << "\n";
+       }
+};
+ 
+boost::function<void(Myfun*,int i, int j)> tf;
+tf =&Myfun::print;
+Myfun f;
+tf(&f::print,3, 4);
+输出3       4
+function应用直接应用于类的成员函数时，声明时要声明对应成员函数类的指针对象，在调用时再将定义的类对象的地址传入。
+
+
+
+bind & function联用
+（1）普通函数（非成员函数）
+对于普通函数，bind绑定函数全部参数或者全部参数缺省用占位符代替的情况都可以和function连用。不能在bind绑定函数时使用占位符来缺省
+部分参数，然后再和function连用，在bind内使用占位符时，如果在bind绑定函数后面补齐参数则与function对象的类型不匹配，如果在
+使用function对象时补齐参数，则编译器会报函数参数不一致的错误。
+ 
+（2）用于成员函数
+class Myfun
+{
+public:
+        void print( int i, int j )
+        {
+                cout << i<< "\t" << j << "\n";
+        }
+};
+……...
+ boost::function<void(int i, int j)> tf;
+ Myfun f;
+ tf = boost::bind(&Myfun::print, f, 3, 4);
+tf(3, 4);
+
+
+
 
 

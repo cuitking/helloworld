@@ -1,0 +1,28 @@
+scgl::SingletonHolder< CLuaHelper > SLuaHelper; luahelper作为一个单例存在于服务器中
+
+
+启动服务器首先创建一个:luaProcessor
+scgl::CLuaProcessor luaProcessor;
+
+CLuaProcessor构成:
+class CLuaProcessor{
+	
+	private:
+		struct Impl;
+		Impl* m_impl;
+};
+struct CLuaProcessor::Impl
+	{
+		INet*							net;
+		CLuaBinder<CLuaProcessor>		luaBinder;
+		int processRef;
+		Impl()
+			:luaBinder("scglNet")
+			, processRef(0)
+			, net(NULL)
+		{
+		}
+	};
+
+template <typename T>
+	class CLuaBinder
