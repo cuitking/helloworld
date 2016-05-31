@@ -90,6 +90,61 @@ struct CLuaProcessor::Impl
 		{
 		}
 	};
+CLuaProcessor::CLuaProcessor()
+		: m_impl(new Impl)
+	{
+		...
+		GetLuaHelper().PushFunction("GenerateUuid",GenerateUuid);
+		m_impl->luaBinder.BindLua(&GetLuaHelper());//把luahelper和binder绑定
+		/*
+			template <typename T>
+			void CLuaBinder<T>::BindLua(CLuaHelper* pLua)
+			{
+				if (pLua != NULL)
+				{
+					m_pLS = pLua->m_pMainThread;
+					CreateLuaTable();
+				}
+			}
+
+			template <typename T>
+			void CLuaBinder<T>::CreateLuaTable()
+			{
+				lua_newtable(m_pLS);//创建一个table在放在栈顶
+				lua_pushstring(m_pLS, "this");//压入key
+				lua_pushlightuserdata(m_pLS, this);//压入value
+				lua_settable(m_pLS, -3);//弹出key,value，并设置到table里面去
+				lua_pushstring(m_pLS, "LuaCallBack");// 压入key
+				lua_pushcfunction(m_pLS, LuaCallback<T>);// 压入value
+				lua_settable(m_pLS, -3);//弹出key,value，并设置到table里面去
+				lua_setglobal(m_pLS, m_strObjectName.c_str());//设置table的名字,并添加到lua全局变量中
+			}
+
+		*/
+		m_impl->luaBinder.BindObject(this);luabinder中T类型为CLuaProcessor,
+		m_impl->luaBinder.Register(&CLuaProcessor::Connect, "Connect");
+		/*
+		template <typename T>
+		void CLuaBinder<T>::Register(Function function, const char* functionName)
+		{
+			int n = lua_gettop(m_pLS);//返回栈顶索引（即栈长度）
+
+			lua_getglobal(m_pLS, m_strObjectName.c_str());//获取lua中的table,并压入栈中.
+			if (lua_istable(m_pLS, -1))
+			{
+				lua_pushstring(m_pLS, functionName);
+				lua_pushnumber(m_pLS, m_functions.size());
+				lua_settable(m_pLS, -3);
+			}
+
+			lua_pop(m_pLS, lua_gettop(m_pLS) - n);
+
+			m_functions.push_back(function);
+		}
+		*/
+		...
+	}
+
 
 template <typename T>
 class CLuaBinder

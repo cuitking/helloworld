@@ -46,3 +46,7 @@ http://www.cnblogs.com/sevenyuan/p/4511808.html
 lua c api 的正确用法
 http://blog.codingnow.com/2015/05/lua_c_api.html
 
+c语言中创建lua的table
+http://blog.csdn.net/wildfireli/article/details/22307567
+
+
