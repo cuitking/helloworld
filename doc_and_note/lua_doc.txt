@@ -1,2 +1,23 @@
 lua中的模块和包
 http://www.jellythink.com/archives/526
+http://blog.kenshinx.me/blog/lua-module/
+--------module中-------------
+local print = print
+module(...)
+--module("retest",package.seeall)
+function bbb()
+	local m = {}
+	local function test1()
+		print("this ,test1")
+	end
+	local function bigtest()
+		test1()
+	end
+	m.bigtest = bigtest
+	return m
+end
+------------require----------------
+package.path = package.path .."./src/?.lua"
+local retest = require("retest")
+retest.bbb().bigtest()
+-----------------------------------------------
