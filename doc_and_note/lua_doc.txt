@@ -4,7 +4,7 @@ http://blog.kenshinx.me/blog/lua-module/
 --------module中-------------
 local print = print
 module(...)
---module("retest",package.seeall)
+--module("retest",package.seeall) //要么使用local print = print，保存之前环境中的print函数,要么将retest加入环境
 function bbb()
 	local m = {}
 	local function test1()
@@ -21,3 +21,28 @@ package.path = package.path .."./src/?.lua"
 local retest = require("retest")
 retest.bbb().bigtest()
 -----------------------------------------------
+有一点容易被忽略掉(我的同事在用的时候就忽略掉了)，module 指令运行完后，整个环境被压栈，所以前面全局的东西再看不见了。
+比如定义了一个 test 模块，使用
+module("test")
+后，下面不再看的见前面的全局环境。如果在这个模块里想调用 print 输出调试信息怎么办呢？一个简单的方法是
+
+local print=print
+module("test")
+
+这样 print 是一个 local 变量，下面也是可见的。或者可以用
+
+local _G=_G
+module("test")
+
+那么 _G.print 也是可以用的。
+
+当然还有一种巧妙的方式，lua 5.1 提供了一个 package.seeall 可以作为 module 的option 传入
+
+module("test",package.seeall)
+
+lua, c++ 交互
+http://www.cnblogs.com/sevenyuan/p/4511808.html
+
+lua c api 的正确用法
+http://blog.codingnow.com/2015/05/lua_c_api.html
+

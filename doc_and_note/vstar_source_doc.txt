@@ -1,4 +1,71 @@
+typedef struct lua_State lua_State;
+typedef int (*lua_CFunction)(lua_State* L);
+typedef const char* (*GetStrByIntF)(int value);
+
+lua_State*  m_pMainThread;
+
+
+CLuaHelper::CLuaHelper()
+		: m_impl(new Impl)
+		, m_pMainThread(NULL)
+		, m_bChunkLoaded(false)
+		, m_pExternalLuaLoader(NULL)
+	{
+		CreateMainState();
+	}
+void CLuaHelper::CreateMainState()
+	{
+		m_pMainThread = luaL_newstate();//创建一个lua状态机.
+		//Lua脚本的编译执行是相互独立的，在不同的线程上执行。通过luaL_newstate()函数可以申请一个虚拟机，返回指针类型
+		//lua_State。今后其他所有Lua Api函数的调用都需要此指针作为第一参数，用来指定某个虚拟机
+		luaL_openlibs(m_pMainThread); //Opens all standard Lua libraries into the given state.
+		lua_pushthread(m_pMainThread); //把 L 中提供的线程压栈。 如果这个线程是当前状态机的主线程的话，返回1.
+		lua_setglobal(m_pMainThread, "g_mainState"); // lua_setglobal的作用是把栈顶的数据传到Lua环境中作为全局变量
+#ifdef _DEBUG
+		PushBoolean("DEBUG", true);
+#endif
+	}
+bool CLuaHelper::PushBoolean(const char* globalName, bool boolean)
+{
+	if (IsStackFull()) //判断lua堆栈是否满了 
+	{
+		return false;
+	}
+	/*
+	bool CLuaHelper::IsStackFull()
+	{
+		return !HaveFreeStackSlot(1);
+	}
+	bool CLuaHelper::HaveFreeStackSlot(int nFreeSlot)
+	{
+		if (lua_checkstack(m_pMainThread, nFreeSlot)) return true;
+		//扩大栈的可用尺寸，栈的默认尺寸是20，此函数会确保堆栈上至少有 sz 个空位。如果不能把堆栈扩展到相应的尺寸，
+		函数返回 false 。这个函数永远不会缩小堆栈；如果堆栈已经比需要的大了，那么就放在那里不会产生变化。
+		return false;
+	}
+	*/
+
+	int n = lua_gettop(m_pMainThread);//返回栈顶索引（即栈长度）  
+	//lua_settop将栈顶设置为一个指定的位置，即修改栈中元素的数量。如果值比原栈顶高，则高的部分nil补足，如果值比原栈低，
+	//则原栈高出的部分舍弃。所以可以用lua_settop(0)来清空栈。
+	lua_pushboolean(m_pMainThread, boolean);//向lua堆栈中压入一个bool值
+	lua_setglobal(m_pMainThread, globalName);//把压入栈顶的值作为lua中的全局变量
+	ClearStackTempData(n);
+	/*
+	void CLuaHelper::ClearStackTempData(int nTempDataAmount)
+	{
+		lua_pop(m_pMainThread, lua_gettop(m_pMainThread) - nTempDataAmount);
+		//弹出向lua中压栈的元素
+	}
+	*/
+	return true;
+}
+
+
+
+
 scgl::SingletonHolder< CLuaHelper > SLuaHelper; luahelper作为一个单例存在于服务器中
+GetLuaHelper()--- SLuaHelper::Instance();
 
 
 启动服务器首先创建一个:luaProcessor
@@ -25,4 +92,22 @@ struct CLuaProcessor::Impl
 	};
 
 template <typename T>
-	class CLuaBinder
+class CLuaBinder
+{
+	private:
+		tstring                 m_strObjectName;
+		T*                      m_pObject;
+		lua_State*              m_pLS;
+		std::vector<Function>   m_functions;
+};
+
+template <typename T>
+	CLuaBinder<T>::CLuaBinder(const char* objectName, T* pObject = NULL, CLuaHelper* pLua = NULL)
+		: m_strObjectName(objectName)
+		, m_pObject(pObject)
+	{
+		if (pLua != NULL)
+		{
+			BindLua(pLua);
+		}
+	}
