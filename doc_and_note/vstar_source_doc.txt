@@ -4,7 +4,17 @@ typedef const char* (*GetStrByIntF)(int value);
 
 lua_State*  m_pMainThread;
 
-
+typedef boost::unordered_map<std::string, scgl::CLuaFunctor*, StringHash>	LuaFunctorMap;
+struct CLuaHelper::Impl
+	{
+		LuaFunctorMap		luaFunctors;
+		scgl::CLuaFunctor*	Process;
+		bool				mainLoaded;
+		bool				countProcess;
+		CallCountInfoMap	processCountInfoList;		// process调用函数性能统计
+		GetStrByIntF		GetProcessIDName;
+		'''
+	};
 CLuaHelper::CLuaHelper()
 		: m_impl(new Impl)
 		, m_pMainThread(NULL)
@@ -68,7 +78,7 @@ scgl::SingletonHolder< CLuaHelper > SLuaHelper; luahelper作为一个单例存�
 GetLuaHelper()--- SLuaHelper::Instance();
 
 
-启动服务器首先创建一个:luaProcessor
+1..启动服务器首先创建一个:luaProcessor
 scgl::CLuaProcessor luaProcessor;
 
 CLuaProcessor构成:
@@ -95,6 +105,19 @@ CLuaProcessor::CLuaProcessor()
 	{
 		...
 		GetLuaHelper().PushFunction("GenerateUuid",GenerateUuid);
+		bool CLuaHelper::PushFunction(const char* globalName, lua_CFunction function)
+		{
+			if (IsStackFull())
+			{
+				return false;
+			}
+
+			int n = lua_gettop(m_pMainThread);
+			lua_pushcfunction(m_pMainThread, function);
+			lua_setglobal(m_pMainThread, globalName);
+			ClearStackTempData(n);
+			return true;
+		}
 		m_impl->luaBinder.BindLua(&GetLuaHelper());//把luahelper和binder绑定
 		/*
 			template <typename T>
@@ -117,29 +140,67 @@ CLuaProcessor::CLuaProcessor()
 				lua_pushstring(m_pLS, "LuaCallBack");// 压入key
 				lua_pushcfunction(m_pLS, LuaCallback<T>);// 压入value
 				lua_settable(m_pLS, -3);//弹出key,value，并设置到table里面去
-				lua_setglobal(m_pLS, m_strObjectName.c_str());//设置table的名字,并添加到lua全局变量中
+				lua_setglobal(m_pLS, m_strObjectName.c_str());//设置table的名字,并添加到lua全局变量中,表的名字为scglNet
 			}
 
 		*/
 		m_impl->luaBinder.BindObject(this);luabinder中T类型为CLuaProcessor,
-		m_impl->luaBinder.Register(&CLuaProcessor::Connect, "Connect");
+		m_impl->luaBinder.Register(&CLuaProcessor::Connect, "Connect");//在c++中注册函数,以便在lua中调用
 		/*
 		template <typename T>
 		void CLuaBinder<T>::Register(Function function, const char* functionName)
 		{
 			int n = lua_gettop(m_pLS);//返回栈顶索引（即栈长度）
 
-			lua_getglobal(m_pLS, m_strObjectName.c_str());//获取lua中的table,并压入栈中.
-			if (lua_istable(m_pLS, -1))
+			lua_getglobal(m_pLS, m_strObjectName.c_str());//获取lua中名为m_strObjectName.c_str()的table,并压入栈中.
+			if (lua_istable(m_pLS, -1)) //判断栈顶元素是否是一个table
 			{
-				lua_pushstring(m_pLS, functionName);
-				lua_pushnumber(m_pLS, m_functions.size());
-				lua_settable(m_pLS, -3);
+				lua_pushstring(m_pLS, functionName);//压入table的key
+				lua_pushnumber(m_pLS, m_functions.size());//压入table的value
+				lua_settable(m_pLS, -3);//将key，value设置为table中的元素，并将加入的key,value出栈
 			}
 
-			lua_pop(m_pLS, lua_gettop(m_pLS) - n);
+			lua_pop(m_pLS, lua_gettop(m_pLS) - n);//弹出向lua中压栈的元素
 
-			m_functions.push_back(function);
+			m_functions.push_back(function);//把注册的函数指针压入保存函数指针的vector对象
+		}
+		*/
+		/* 在lua中调用c++中注册的函数过程.
+		在lua中，scglNet.LuaCallBack(scglNet.this, scglNet["Broadcast"], connectionType, BPheader._rawData:data(), packetEx._rawData:data())
+		调用c++注册的broadcast函数
+		template <typename T>
+		int LuaCallback(lua_State* L)
+		{
+			...
+			CLuaBinder<T>* t = NULL;
+			if (lua_islightuserdata(L, 1)) //判断是否是ligthuserdata类型
+			{
+				t = static_cast<CLuaBinder<T>*>(lua_touserdata(L, 1));//返回轻量级的userdata指针
+				轻量级userdata是一种表示C指针的值（即void *）
+			}
+			int funcPos = -1;
+			if (lua_type(L, 2) == LUA_TNUMBER)
+			{
+				funcPos = static_cast<int>(luaL_checknumber(L, 2));
+				//luaL_checknumber函数可以检查给定的参数是否为数字：当有错误发生的时候，将抛出一个错误信息；
+				//否则返回作为参数的那个数字
+			}
+
+			int returnValueAmount = 0;
+			if (t && t->m_pObject && funcPos >= 0)
+			{
+				lua_remove(L, 1);//lua_remove删除给定索引的元素，并将这一索引之上的元素来填补空缺
+				lua_remove(L, 1);//这里移除lightuserdata,scglNet["Broadcast"]对应的索引
+				returnValueAmount = (t->m_pObject->*(t->m_functions[funcPos]))(L);
+				/*
+					int CLuaProcessor::Broadcast(lua_State* L)
+					{
+						.....
+					}
+
+				*/
+			}
+			...
 		}
 		*/
 		...
@@ -166,3 +227,53 @@ template <typename T>
 			BindLua(pLua);
 		}
 	}
+
+2.读取配置
+//加载启动配置文件
+	scgl::ConfigProcessParam(configFile);
+
+void ConfigProcessParam( const char* configFile, CLuaHelper::LoadFuntion loader /*= NULL*/ )
+{
+	...
+	SLuaHelper::Instance().RunString("require('packet')");
+	/*
+	bool CLuaHelper::RunString( const char* string )
+	{
+		if (luaL_dostring(m_pMainThread, string))
+		//载入并运行给定的字符串。它被定义为下面的宏：
+     	(luaL_loadstring(L, str) || lua_pcall(L, 0, LUA_MULTRET, 0))
+		如果没有错误则返回0，发生错误时返回1。
+		{
+			std::cerr << luaL_checkstring(m_pMainThread, -1) <<  "\n";检查栈中函数参数narg对应的栈顶是否字符串并返回它。
+			return false;
+		}
+		return true;
+	}
+	*/
+	//加载启动配置文件
+	{
+		VariantVector parameters;
+		VariantVector results;
+		SLuaHelper::Instance().CallFunction("GetConfigParam", &parameters, &results);
+		if (!results.empty() && results[0].GetMetaType() == CVariant::TYPE_TABLE)
+		{
+				global_config = results[0].GetTable();
+		}
+	}
+
+		//加载包定义
+	{
+		VariantVector parameters;
+		VariantVector results;
+		SLuaHelper::Instance().CallFunction("GetPacketDetail", &parameters, &results);
+		if (!results.empty() && results[0].GetMetaType() == CVariant::TYPE_TABLE)
+		{
+			const CTable::VariantMap& packets = results[0].GetTable().GetAllValue();
+			for (CTable::VariantMap::const_iterator it = packets.begin(); it != packets.end(); ++it)
+			{
+					const CVariant& value = it->second;
+					PushPacketDetail(value, packetDetailMap);
+			}
+		}
+	}
+}

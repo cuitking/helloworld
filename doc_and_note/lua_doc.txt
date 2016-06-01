@@ -49,4 +49,13 @@ http://blog.codingnow.com/2015/05/lua_c_api.html
 c语言中创建lua的table
 http://blog.csdn.net/wildfireli/article/details/22307567
 
+lua userdata ---------------
+http://www.jellythink.com/archives/587
+
+函数lua_newuserdata会根据指定的大小分配一块内存，并将对应的userdata压入栈中，最后返回这个内存块的地址：
+
+
+
+
+
 
