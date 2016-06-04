@@ -222,6 +222,26 @@ unordered_map、unordered_multimap、unordered_set、unordered_multiset是标准
 
 http://blog.csdn.net/orzlzro/article/details/7099231
 
+构造函数，移动构造函数，移动赋值操作符，复制构造函数，赋值操作符，析构函数
+http://blog.csdn.net/jofranks/article/details/17438955
+
+question：
+bbc convertValue(int a)
+{
+    std::cout << "convertValue function" << std::endl;
+    return a;
+}
+bbc bbco = convertValue(b); //直接调用bbc的构造函数
+
+-------boost::multi_index_container-------
+学习
+
+-------------boost::property_tree::ptree-----------
+
+http://blog.csdn.net/yacper/article/details/8025919
+
+
+
 
 
 

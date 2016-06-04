@@ -55,6 +55,18 @@ http://www.jellythink.com/archives/587
 函数lua_newuserdata会根据指定的大小分配一块内存，并将对应的userdata压入栈中，最后返回这个内存块的地址：
 
 
+lua提供了三种可以代替全局变量的方法。分别是注册表，环境变量和upvalue。
+---------------------------
+http://simohayha.iteye.com/blog/552391
+https://www.douban.com/note/303011947/
+
+#define LUA_REGISTRYINDEX   (-10000)  
+#define LUA_ENVIRONINDEX    (-10001)  
+#define LUA_GLOBALSINDEX    (-10002)  
+  
+///这个就是来存取upvalue。  
+#define lua_upvalueindex(i) (LUA_GLOBALSINDEX-(i))  
+
 
 
 

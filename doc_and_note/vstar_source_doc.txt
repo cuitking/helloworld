@@ -3,7 +3,7 @@ typedef int (*lua_CFunction)(lua_State* L);
 typedef const char* (*GetStrByIntF)(int value);
 
 lua_State*  m_pMainThread;
-
+struct StringHash{};
 typedef boost::unordered_map<std::string, scgl::CLuaFunctor*, StringHash>	LuaFunctorMap;
 struct CLuaHelper::Impl
 	{
@@ -252,9 +252,99 @@ void ConfigProcessParam( const char* configFile, CLuaHelper::LoadFuntion loader 
 	*/
 	//加载启动配置文件
 	{
-		VariantVector parameters;
-		VariantVector results;
+		VariantVector parameters,results;
+		typedef std::vector<CVariant> VariantVector;
 		SLuaHelper::Instance().CallFunction("GetConfigParam", &parameters, &results);
+		/*
+			bool CLuaHelper::CallFunction(const char* functionName, const VariantVector* params, VariantVector* results)
+			{
+				//调用lua中的全局函数，并将返回值保存
+				CLuaFunctor* functor = new CLuaFunctor(m_pMainThread, -1);
+				/*
+					CLuaFunctor::CLuaFunctor(lua_State* L, int index)
+					{
+						if (!lua_isfunction(L, index))
+						{
+							throw std::bad_alloc("not function");
+						}
+						m_impl->L = L;
+						lua_pushvalue(L, index);//将idx索引上的值的副本压入栈顶
+						m_impl->functionReference = luaL_ref(L, LUA_REGISTRYINDEX);//存放函数到lua注册表中.并返回当前函数的引用
+						LUA_REGISTRYINDEX//lua的注册表
+					}
+				*/
+				function = m_impl->luaFunctors.insert(std::make_pair(std::string(functionName), functor)).first;
+				ClearStackTempData(n);
+				return (*function->second)(params, results);
+				/*
+					CLuaFunctor中重载了()
+		--------------------------------------------------------			
+	bool CLuaFunctor::operator()(const VariantVector* parameters, VariantVector* results)
+	{
+		if (!lua_checkstack(m_impl->L, static_cast<int>(parameters->size()) + 1))
+		{
+			return false;
+		}
+
+		int n = lua_gettop(m_impl->L); 
+
+		lua_rawgeti(m_impl->L, LUA_REGISTRYINDEX, m_impl->functionReference);lua_rawgeti(lua_State* L,int index,int n)
+		//把 t[n] 的值压栈，这里的 t 是指给定索引 index 处的一个值。这是一个直接访问；就是说，它不会触发元方法。
+		if (!lua_isfunction(m_impl->L, -1))
+		{
+			lua_pop(m_impl->L, lua_gettop(m_impl->L) - n);
+			return false;
+		}
+
+		// 压入参数
+		if (parameters && !(parameters->empty()))
+		{
+			for (VariantVector::const_iterator it = parameters->begin(); it != parameters->end(); ++it)
+			{
+				PushVariant(m_impl->L, *it);//对参数压栈
+			}
+		}
+
+		LOG_TRACE("Lua", __FUNCTION__ << boost::this_thread::get_id() << ",this:" << this << ",L:" << m_impl->L);
+		// 调用函数 lua_pcall(lua_State *L, int nargs, int nresults, int errfunc)
+		nargs:参数个数，nresults：返回值个数，errFunc：错误处理函数，0表示无，表示错误处理函数在栈中的索引
+		if (lua_pcall(m_impl->L, lua_gettop(m_impl->L) - 1 - n, LUA_MULTRET, 0))
+		{
+			LOG_ERROR("Lua", "脚本执行错误，请检查脚本代码:" << luaL_checkstring(m_impl->L, -1));
+			lua_pop(m_impl->L, lua_gettop(m_impl->L) - n);
+			return false;
+		}
+
+
+		if (results != NULL)
+		{
+			int retCount = lua_gettop(m_impl->L) - n;
+			if (retCount <= 0)
+			{
+				lua_pop(m_impl->L, lua_gettop(m_impl->L) - n);
+				return true;
+			}
+			// 取得结果
+			for (int i = -retCount; i <= -1; ++i)
+			{
+				CVariant variant = ConvertValue2Variant(m_impl->L, i);
+				if (variant != CVariant::NIL)
+				{
+					results->push_back(variant);//调用lua中函数的返回值保存
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+		lua_pop(m_impl->L, lua_gettop(m_impl->L) - n);
+		return true;
+	}
+-------------------------------------------------------------------
+				*/
+			}
+		*/
 		if (!results.empty() && results[0].GetMetaType() == CVariant::TYPE_TABLE)
 		{
 				global_config = results[0].GetTable();
@@ -277,3 +367,25 @@ void ConfigProcessParam( const char* configFile, CLuaHelper::LoadFuntion loader 
 		}
 	}
 }
+3.创建服务
+const char* netConfig = scgl::GetGlobalParam("netConfig").GetString();
+//从json中取得网络配置表的文件名
+scgl::CNetService* netService = new scgl::CNetService(serviceType, netConfig, 300);
+scgl::INet& net = *netService;
+luaProcessor.SetNet(net);
+
+class CNetService : public INet, public IConnectionManager
+{
+	CNetService::CNetService(const char* serviceName, const char* configFile /*= NULL*/, unsigned int updateInteval /*= 100*/)
+		: m_impl(NULL)
+	{
+		m_impl = new Impl(serviceName, *this, *this);
+		m_impl->updateInteval = updateInteval;
+
+		//服务器端初始化
+		boost::property_tree::ptree ptree;
+		boost::filesystem::ifstream f(configFile);
+		boost::property_tree::read_xml(f, ptree);
+		ptree = ptree.get_child("Settings");
+		
+};
