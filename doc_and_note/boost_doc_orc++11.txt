@@ -239,6 +239,35 @@ bbc bbco = convertValue(b); //直接调用bbc的构造函数
 -------------boost::property_tree::ptree-----------
 
 http://blog.csdn.net/yacper/article/details/8025919
+http://blog.csdn.net/stelalala/article/details/8967812
+
+
+----------------POD类型---------------------
+http://www.cnblogs.com/tracylee/archive/2012/10/18/2730164.html
+----------------------------------------------
+------------boost_foreach-------------------
+http://www.cnblogs.com/egmkang/archive/2011/05/14/2046205.html
+std::vector<int> test;
+BOOST_FOREACH(int value,test)
+{//...............}
+std::map<int32_t,int32_t> _map;
+typedef const std::map<int32_t, int32_t>::value_type const_pair;
+BOOST_FOREACH(const_pair& node,_map)
+{
+  //这里就可以访问node的元素
+  int32_t key = node.first;
+  int32_t value = node.second;
+}
+
+-------------boost::asio------------------
+http://blog.csdn.net/q601510717/article/details/7732643
+
+------------boost::timer -----------------
+
+http://www.cnblogs.com/lzjsky/archive/2011/05/03/2034994.html
+http://zh.highscore.de/cpp/boost/asio.html
+
+
 
 
 

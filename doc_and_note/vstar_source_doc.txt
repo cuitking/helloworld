@@ -376,6 +376,74 @@ luaProcessor.SetNet(net);
 
 class CNetService : public INet, public IConnectionManager
 {
+	struct CNetService::Impl
+	{
+		ConnectionConfigVector			connectionConfigs;//配置容器
+		boost::asio::io_service			io_service;
+		boost::recursive_mutex			connections_mutex;
+		ConnectionDetailMap				connections;
+		ProcessorVector					processorList;
+		std::vector<SConnectionConfig*> managerConfigs;
+		std::vector<SConnectionConfig*> crossConfigs;
+		std::vector<SConnectionConfig*> pvpConfigs;
+		Guid							myID;
+		bool							isActive;
+		unsigned int					updateInteval;
+		int								clockDifferential;
+		bool							needDelPacket;
+		bool							needPostUpdate;
+		ProcessDataDeque				debugPacketList;
+		ProcessDataDeque				updatePacketList;
+		ProcessDataDeque				dbPacketList;
+		ProcessDataDeque				defaultPacketList;
+		CTcpHandler						tcpHandler;
+
+		//自定义打包/解包接口
+		boost::shared_ptr<EncodeProcess> encodeFunc;
+		boost::shared_ptr<DecodeProcess> decodeFunc;
+		boost::shared_ptr<PrepareProcess> prepareFunc;
+		boost::shared_ptr<InitConnectionProcess> initConnectionFunc;
+		boost::shared_ptr<DisplayMessageProcess> displayMessageFunc;
+
+		//包统计相关
+		IntPacketStatisticsMap				solvedStatistics;
+		bool								needStatTime;
+		IntPacketStatisticsMap				sentStatistics;
+		bool								needStat;
+		bool							isServerNet;
+		pb::EConnectionType				serviceType;
+
+		//上次Update的时间点
+		bc::high_resolution_clock::time_point lastUpdateTimePoint;
+#ifndef _WIN32
+		tbb::atomic<bool>		isPosted;		//当前是否投递了异步通知
+#endif
+		Impl(const char* serviceName, INet& net, IConnectionManager& connectionManager)
+			: myID(INVALID_GUID)
+			, isActive(false)
+			, tcpHandler(net, connectionManager)
+			, clockDifferential(0)
+			, needDelPacket(false)
+			, needPostUpdate(false)
+#if defined(_DEBUG) || defined(DEBUG)
+			, needStatTime(true)
+			, needStat(true)
+#else
+			, needStatTime(false)
+			, needStat(false)
+#endif
+		{
+			serviceType = scgl::GetConnectionType(serviceName);
+#ifndef _WIN32
+			isPosted = false;
+#endif
+		}
+
+		~Impl()
+		{
+		}
+	};
+
 	CNetService::CNetService(const char* serviceName, const char* configFile /*= NULL*/, unsigned int updateInteval /*= 100*/)
 		: m_impl(NULL)
 	{
@@ -387,5 +455,48 @@ class CNetService : public INet, public IConnectionManager
 		boost::filesystem::ifstream f(configFile);
 		boost::property_tree::read_xml(f, ptree);
 		ptree = ptree.get_child("Settings");
+
+		boost::property_tree::ptree::const_assoc_iterator iter = ptree.find("Servers");
+		if (ptree.to_iterator(iter) != ptree.end())
+		{
+				BOOST_FOREACH(const boost::property_tree::ptree::value_type & v, ptree.get_child("Servers"))
+				{
+					const boost::property_tree::ptree& p = v.second;
+					unsigned short maxConnectionAmount = p.get<unsigned short>("MaxConnectionAmount");
+					std::string listenIP = p.get<std::string>("ListenIP");
+					unsigned short listenPort = p.get<unsigned short>("ListenPort");
+					std::string typeName = p.get<std::string>("Type");
+					bool udp = (p.get<std::string>("Udp", "False") == "True");
+					unsigned int recvBuff = p.get<unsigned int>("RecvBuffer", 0);
+					unsigned int sendBuff = p.get<unsigned int>("SendBuffer", 0);
+					SConnectionConfig config(GetConnectionType(typeName.c_str()));
+					config.tcp = !udp;
+					config.listener = true;
+					config.maxConnectionAmount = maxConnectionAmount;
+					scgl::CopyStringSafely(config.IP, listenIP.c_str());
+					config.port = listenPort;
+					config.readBufferCapacity = recvBuff;
+					config.writeBufferCapacity = sendBuff;
+					m_impl->connectionConfigs.push_back(config);
+				}
+			}
+		}
+		RegisterTimedFunctor(5, boost::bind(&CNetService::ProcessAllPacket, this), true);
+		/*
+		void CNetService::RegisterTimedFunctor( int milliseconds, Functor functor, bool repeat, bool iothread)
+		{
+			if (iothread)
+			{
+			TimerPtr timer(new Timer(*m_impl->tcpHandler.GetIOService(), bc::milliseconds(milliseconds)));
+			timer->async_wait(boost::bind(&CNetService::OnTimer, this, timer, functor, repeat, milliseconds));
+			}
+			else
+			{
+			TimerPtr timer(new Timer(m_impl->io_service, bc::milliseconds(milliseconds)));
+			timer->async_wait(boost::bind(&CNetService::OnTimer, this, timer, functor, repeat, milliseconds));
+			}
+		}
+		*/
+	}	
 		
 };

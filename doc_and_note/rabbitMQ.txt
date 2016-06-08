@@ -1,0 +1,2 @@
+--------------------rabbitMQ doc-----------------
+http://blog.csdn.net/column/details/rabbitmq.html
