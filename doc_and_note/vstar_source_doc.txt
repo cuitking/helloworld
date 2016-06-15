@@ -495,6 +495,10 @@ class CNetService : public INet, public IConnectionManager
 			TimerPtr timer(new Timer(m_impl->io_service, bc::milliseconds(milliseconds)));
 			timer->async_wait(boost::bind(&CNetService::OnTimer, this, timer, functor, repeat, milliseconds));
 			}
+			typedef boost::asio::high_resolution_timer						Timer;
+			Boost.Asio基于std::chrono机制通过basic_waitable_timer类模板提供了基本的定时器功能.system_timer,steady_timer 和 
+			high_resolution_timer分别使用system_clock, steady_clock 和 high_resolution_clock标准时钟.
+			
 		}
 		*/
 	}	

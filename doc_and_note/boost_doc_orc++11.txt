@@ -1,4 +1,7 @@
 -------------------boost智能指针-------------------
+
+http://blog.csdn.net/jnu_simba/article/details/9569593
+
 boost::shared_ptr 使用boost::make_shared初始化
 boost::shared_ptr构造函数会执行两次内存申请，而boost::make_shared则执行一次。
 boost::shared_ptr<A> p1 = boost::make_shared<A>();
@@ -235,6 +238,19 @@ bbc bbco = convertValue(b); //直接调用bbc的构造函数
 
 -------boost::multi_index_container-------
 学习
+http://blog.csdn.net/gongxinheng/article/details/5421914
+修改一个有序容器（比如map）中某元素的key值会怎么样呢？答案很明显，后果很严重...最起码的，
+有序容器很可能就变得无序了，这就是为什么boost的multi_index提供了replace和modify（这俩函数是ordered_index
+索引器提供的）成员函数来修改元素的内容，因为有序索引器一定要保证索引序列中的内容是有序的才能用高效
+的办法索引到需要的内容，replace方法提供所有迭代器与引用的有效性的保证，它返回一个bool值
+
+
+stu_num被作为容器的唯一值索引（unique），那么你就等于已经保证了该值不会重复，当然你可以修改成一个不和
+其它元素产生冲突的值，但是stu_num为1的值已经存在了，所以replace失败了，结果呢，由于replace方法的保证，
+所以容器不会发生任何变化，所以，修改唯一值索引时一定要谨慎了。另外modify方法就没那么严格了，为什么要有
+两种修改函数的存在呢？答案是：效率，因为replace会发生两次赋值拷贝，如果结构很大并且使用的很频繁，有可能
+会成为性能瓶颈，modify的存在就是出于这种情况的考虑，modify方法有接受两个参数和三个参数的重载
+
 
 -------------boost::property_tree::ptree-----------
 
@@ -266,6 +282,8 @@ http://blog.csdn.net/q601510717/article/details/7732643
 
 http://www.cnblogs.com/lzjsky/archive/2011/05/03/2034994.html
 http://zh.highscore.de/cpp/boost/asio.html
+
+
 
 
 
