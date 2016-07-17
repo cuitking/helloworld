@@ -138,7 +138,9 @@ http://blog.csdn.net/xiaojun111111/article/details/50970188
 克隆工程 git clone https:xxxxxxxxxxxxxxxxxxxxx
 查看远端分支 git remote -va
 创建本地分支并与远端分支关联：git checkout origin/branch_name -b branch_name
-
+提交修改：git commit -a
+	git commit -m "注释"
+提交到远端：git push
 
 
 
