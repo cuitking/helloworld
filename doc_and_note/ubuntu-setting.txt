@@ -42,6 +42,7 @@ secureCRT设置 session -> properties ->X/Y/Z modem
 	puttygen kk2_git.ppk -0 private-openssh -o id_rsa
 	public key:
 	puttygen kk2_git.ppk -O public-openssh -o id_rsa.pub
+	
 
 ------------------------ubuntu 安装scons---------------------------
 
@@ -83,6 +84,8 @@ scons: done building targets.
 
 ---------------------------ubuntu 安装protobuf----------------------------------
 http://blog.csdn.net/xocoder/article/details/9155901
+ImportError: No module named google.protobuf.internal 解决办法
+http://blog.csdn.net/woainiwss/article/details/50585665
 
 
 --------------------------vs code 配置c++开发环境 ubuntu------------------------------
@@ -137,10 +140,88 @@ http://blog.csdn.net/xiaojun111111/article/details/50970188
 ------------------linux git 操作 -------------------
 克隆工程 git clone https:xxxxxxxxxxxxxxxxxxxxx
 查看远端分支 git remote -va
+			 git branch -a
+			 
 创建本地分支并与远端分支关联：git checkout origin/branch_name -b branch_name
 提交修改：git commit -a
 	git commit -m "注释"
 提交到远端：git push
+git pull 遇到冲突:
+1.先将本地
+http://www.01happy.com/git-resolve-conflicts/
+
+创建tar.xz文件：只要先 tar cvf xxx.tar xxx/ 这样创建xxx.tar文件先，然后使用 xz -z xxx.tar 来将 xxx.tar压缩成为 xxx.tar.xz
+解压tar.xz文件：先 xz -d xxx.tar.xz 将 xxx.tar.xz解压成 xxx.tar 然后，再用 tar xvf xxx.tar来解包。
+解压到指定目录: -C 
+
+-------------------ubuntu 源码安装lua5.1.5-----------
+http://blog.csdn.net/yanggd1987/article/details/46681687 教程为centos环境
+1.下载lua源码
+2.安装lua依赖库
+	sudo apt-get install libreadline6-dev
+3.check
+		make linux test
+		make install
+		// 错误
+		/usr/bin/ld: cannot find -lncurses
+		collect2: error: ld returned 1 exit status
+		//解决 sudo apt-get install libncurses5-dev
+4.安装lua模块管理工具 luarocks
+wget http://luarocks.org/releases/luarocks-2.2.1.tar.gz  
+tar zxpf luarocks-2.2.1.tar.gz  
+cd luarocks-2.2.1  
+./configure  
+如果说找不到lua.h头文件
+./configure --with-lua=/usr/local --with-lua-include=/usr/local/include  
+make bootstrap  
+5.从github上拉 luafilesystem 下来
+git clone https://github.com/keplerproject/luafilesystem.git
+ luarocks install luafilesystem
+6.会在/usr/local/lib/lua/5.1/下生成一个lfs.so的文件，就可以引用该库，调用其中的函数。
+
+---------------------------ubuntu 源码安装mongoDB-------------------------
+
+1.下载源码：
+https://github.com/mongodb/mongo/tree/v2.4 git clone 下来后切换到对应版本的分支
+2.安装scons 
+  下载 scons源码 scons-2.2.0.tar.gz
+  解压 tar -zxvf scons-2.2.0.tar.gz
+  cd scons-2.2.0
+  python setup.py install
+ 3.解压mongodb源码 mongo-2.4.zip
+   unzip mongo-2.4.zip
+   修改 
+
+https://github.com/mongodb/mongo-cxx-driver/tree/legacy mongodb c++ driver mongdbclient
+http://blog.csdn.net/baiwfg2/article/details/38044401 mongdb和mongdbclient安装教程
+
+-----------------------boost 编译不带-fPIC的解决办法-----------
+http://blog.csdn.net/lzshlzsh/article/details/50110771
+
+http://blog.csdn.net/yhm07/article/details/45459139 编译boost
+可能出现的错误：
+1. uintptr_t 未定义 http://blog.csdn.net/cs_zhanyb/article/details/16973379
+	include <stdint.h> 解决
+2. 出现fatal error: bzlib.h: No such file or directory
+	解决： 安装 apt-get install libbz2-dev
+3. 	zlib.h：没有那个文件或目录
+	解决：sudo apt-get install zlib1g-dev
+-----------------------------------------------------------------------
+1.解决 /usr/bin/ld: cannot find -lssl
+	sudo apt-get install libssl-dev
+2. 解决 /usr/bin/ld: cannot find -ltcmalloc_minimal
+  安装TCMalloc 
+	http://blog.csdn.net/chen19870707/article/details/40301783
+  http://blog.csdn.net/zhuichao001/article/details/8289942
+3.安装log4cplus 
+	http://blog.csdn.net/astraylinux/article/details/7258835
+4.安装tbb
+	http://www.tuicool.com/articles/R3uu22
+5.安装cxx-driver
+	
+
+	
+
 
 
 

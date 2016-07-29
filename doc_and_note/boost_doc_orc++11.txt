@@ -35,6 +35,8 @@ if(shared_ptr<int> r = q.lock())
 auto global_pack(boost::make_shared<DEFAULT_PACKER>());
 boost::shared_ptr<DEFAULT_PACKER> global_pack(boost::make_shared<DEFAULT_PACKER>());
 
+
+使用时,加入头文件 #include<algorithm>
 std::for_each 
 template<class InputIterator, class Function>
   Function for_each(InputIterator first, InputIterator last, Function fn)
