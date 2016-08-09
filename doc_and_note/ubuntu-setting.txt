@@ -86,6 +86,7 @@ scons: done building targets.
 http://blog.csdn.net/xocoder/article/details/9155901
 ImportError: No module named google.protobuf.internal 解决办法
 http://blog.csdn.net/woainiwss/article/details/50585665
+./configure CXXFLAGS=-fPIC   64位
 
 
 --------------------------vs code 配置c++开发环境 ubuntu------------------------------
@@ -152,6 +153,8 @@ http://www.01happy.com/git-resolve-conflicts/
 
 创建tar.xz文件：只要先 tar cvf xxx.tar xxx/ 这样创建xxx.tar文件先，然后使用 xz -z xxx.tar 来将 xxx.tar压缩成为 xxx.tar.xz
 解压tar.xz文件：先 xz -d xxx.tar.xz 将 xxx.tar.xz解压成 xxx.tar 然后，再用 tar xvf xxx.tar来解包。
+.tar.gz     格式解压为          tar   -zxvf   xx.tar.gz
+.tar.bz2   格式解压为          tar   -jxvf    xx.tar.bz2
 解压到指定目录: -C 
 
 -------------------ubuntu 源码安装lua5.1.5-----------
@@ -196,7 +199,10 @@ https://github.com/mongodb/mongo-cxx-driver/tree/legacy mongodb c++ driver mongd
 http://blog.csdn.net/baiwfg2/article/details/38044401 mongdb和mongdbclient安装教程
 
 -----------------------boost 编译不带-fPIC的解决办法-----------
+./bjam cxxflags=-fPIC
 http://blog.csdn.net/lzshlzsh/article/details/50110771
+
+http://blog.csdn.net/zgl_dm/article/details/8363843  centos编译boost
 
 http://blog.csdn.net/yhm07/article/details/45459139 编译boost
 可能出现的错误：
@@ -204,6 +210,7 @@ http://blog.csdn.net/yhm07/article/details/45459139 编译boost
 	include <stdint.h> 解决
 2. 出现fatal error: bzlib.h: No such file or directory
 	解决： 安装 apt-get install libbz2-dev
+			yum install bzip2-devel
 3. 	zlib.h：没有那个文件或目录
 	解决：sudo apt-get install zlib1g-dev
 -----------------------------------------------------------------------
@@ -218,7 +225,41 @@ http://blog.csdn.net/yhm07/article/details/45459139 编译boost
 4.安装tbb
 	http://www.tuicool.com/articles/R3uu22
 5.安装cxx-driver
-	
+
+
+
+------------------------ubuntu 安装最新的cmake------------------
+http://blog.csdn.net/u012005313/article/details/50496361
+
+
+----------------------ubuntu 编译安装mongo_cxx_driver_master  c++11------------------
+http://www.cnblogs.com/pluse/p/5491300.html
+
+
+---------------------cmake -------------------------
+
+set PATH=%PATH%;.... cmake\bin;
+
+cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=.\build_vs -DLIBBSON_DIR=C:\Program Files\libbson\lib  mongo-cxx-driver-master
+
+cmake 编译 libbson 和 mongo-c-driver 
+cd mongo-c-driver-$ver
+cd src\libbson
+cmake -DCMAKE_INSTALL_PREFIX=D:\lib_bson -G "Visual Studio 14 2015 Win64" .
+msbuild.exe ALL_BUILD.vcxproj
+msbuild.exe INSTALL.vcxproj
+cd ..\..
+cmake -DCMAKE_INSTALL_PREFIX=D:\lib_mongo_c -DBSON_ROOT_DIR=D:\lib_bson -G "Visual Studio 14 2015 Win64" .
+msbuild.exe ALL_BUILD.vcxproj
+msbuild.exe INSTALL.vcxproj
+
+cmake -DLIBBSON_DIR=D:\lib_bson -DBOOST_ROOT=E:\some_int\boost_1_59_0 -DLIBMONGOC_DIR=D:\lib_mongo_c -G "Visual Studio 14 2015 Win64" ..\mongo-cxx-driver-master
+
+
+
+
+
+
 
 	
 
