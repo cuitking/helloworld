@@ -204,7 +204,8 @@ http://blog.csdn.net/lzshlzsh/article/details/50110771
 
 http://blog.csdn.net/zgl_dm/article/details/8363843  centos编译boost
 
-http://blog.csdn.net/yhm07/article/details/45459139 编译boost
+http://blog.csdn.net/yhm07/article/details/45459139 编译boost ubuntu 
+http://blog.csdn.net/u011507599/article/details/50975072 win10 编译boost
 可能出现的错误：
 1. uintptr_t 未定义 http://blog.csdn.net/cs_zhanyb/article/details/16973379
 	include <stdint.h> 解决
@@ -253,6 +254,7 @@ cmake -DCMAKE_INSTALL_PREFIX=D:\lib_mongo_c -DBSON_ROOT_DIR=D:\lib_bson -G "Visu
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj
 
+cmake 生成mongo_cxx_driver  vs2015的工程
 cmake -DLIBBSON_DIR=D:\lib_bson -DBOOST_ROOT=E:\some_int\boost_1_59_0 -DLIBMONGOC_DIR=D:\lib_mongo_c -G "Visual Studio 14 2015 Win64" ..\mongo-cxx-driver-master
 
 
