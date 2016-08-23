@@ -285,6 +285,10 @@ http://blog.csdn.net/q601510717/article/details/7732643
 http://www.cnblogs.com/lzjsky/archive/2011/05/03/2034994.html
 http://zh.highscore.de/cpp/boost/asio.html
 
+-----------boost::asio-------------------
+http://godebug.org/index.php/archives/56/
+
+
 
 
 
