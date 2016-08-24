@@ -213,7 +213,9 @@ http://blog.csdn.net/u011507599/article/details/50975072 win10 编译boost
 	解决： 安装 apt-get install libbz2-dev
 			yum install bzip2-devel
 3. 	zlib.h：没有那个文件或目录
-	解决：sudo apt-get install zlib1g-dev
+	解决：sudo apt-get install zlib1g-dev yum install zlib-devel
+4. pyconfig.h
+	解决: yum install python-devel
 -----------------------------------------------------------------------
 1.解决 /usr/bin/ld: cannot find -lssl
 	sudo apt-get install libssl-dev
