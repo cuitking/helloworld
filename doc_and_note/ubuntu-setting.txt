@@ -259,6 +259,12 @@ cmake -DLIBBSON_DIR=D:\lib_bson -DBOOST_ROOT=E:\some_int\boost_1_59_0 -DLIBMONGO
 
 
 
+---------------visual studio code   ubuntu -----------------
+
+
+
+
+
 
 
 
