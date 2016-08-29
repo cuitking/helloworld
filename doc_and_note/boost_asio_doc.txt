@@ -1,0 +1,103 @@
+asio2----------------
+
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+int num = 0;
+void foo()
+{
+    std::cout << "hello " << ++num << std::endl;
+}
+
+int main(int argc, char* argv[])
+{
+    boost::asio::io_service ios;
+
+    for (int i = 0; i < 10; ++i)
+    {
+        ios.post(foo);
+    }
+
+    std::cout << "执行run之前" << std::endl;
+    ios.run();
+
+    std::cout << "run执行完毕" << std::endl;
+
+    return 0;
+}
+如果你想让完成一个事件返回一次，可续选择用run_one，这样的话只要完成一个事件就会返回一次，而不是所有的都完成了才返
+回。使用run_one的话需要用配合stopped函数来判断是否所有时间都已经执行完了。其实run函数与下面的代码是一样的效果：
+
+while(!ios.stopped())
+{
+	ios.run_one()
+}
+
+另外当所执行的事件出错时，run函数也会退出或抛出异常。run函数和run_one函数都有两个重载，没有参数的run或run_one在遇
+到异常时自己也会会抛出boost::system::system_error异常，加了boost::system::error_code&参数的版本则会将错误信息写入
+该参数然后返回。不过我还一直没遇到过run函数抛出异常或者出错的情况，可能是用的太少了。
+既然只要还有“任务”，run就不会退出，个人认为一个好的设计应该一直让我们的发动机有事情可做，一直到做完所有的事情然后退出，如下面的代码：
+
+#include <boost/bind.hpp>
+#include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
+#include <iostream>
+void async_dir(boost::asio::io_service& io, boost::filesystem::directory_iterator& di)
+{
+    if (di == boost::filesystem::directory_iterator())
+    {
+        return;
+    }
+
+    if (boost::filesystem::is_directory(di->path()))
+    {
+        boost::system::error_code ec;
+        boost::filesystem::directory_iterator sub_di(di->path(),ec);
+
+        if (!ec)
+        {
+            io.post(boost::bind(&async_dir, boost::ref(io), sub_di));
+        }
+        else
+        {
+            std::cout << "遍历目录 " << di->path() << "出错，错误原因为：" << ec.message() << std::endl;
+        }
+    }
+
+    std::cout << di->path() << std::endl;
+
+    boost::system::error_code ec;
+    ++di;
+    io.post(boost::bind(&async_dir, boost::ref(io), di));
+}
+
+int main(int argc, char* argv[])
+{
+    boost::asio::io_service io;
+
+    boost::filesystem::path p("C:\\");
+    boost::system::error_code ec;
+    boost::filesystem::directory_iterator di(p,ec);
+    int num = 0;
+
+    if (!ec)
+    {
+        io.post(boost::bind(&async_dir, boost::ref(io), di));
+    }
+    else
+    {
+        std::cout << "遍历目录 " << p << "出错，错误原因为：" << ec.message() << std::endl;
+    }
+
+    io.run();
+    return 0;
+}
+
+异步递归：可由boost::asio::io_service中post,run,boost::Bind实现
+这里就是在主函数中只post了一次，当函数完成或找到子文件夹时就再次调用post给发动机添加任务，直到所有的任务都已完成
+，就无需添加任务了，run函数自然就退出了。
+虽然最好的做法是一直让发动机有事可做而不会退出，可是有的时候可能并不能做的这么完善，但是又不想让run退出，这时候
+你就需要boost::asio::io_service::work来帮忙，这个类的作用就是让io_service一直处于有事可做的状态而不会从run函数中
+退出，这样就避免了我们自己写循环重复调用run函数。当work析构而且没有任务的时候，run就会返回，测试代码如下
+
