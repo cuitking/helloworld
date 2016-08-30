@@ -9,5 +9,9 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/thread.hpp>
+
+#define MAXLENBUF 1024
+
 
 #endif // !_TYPE_H_

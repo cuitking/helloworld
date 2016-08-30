@@ -85,3 +85,99 @@ void TaskFileSystem::run()
 {
 	ios.run();
 }
+
+/*---------------------------*/
+TaskWithWork::TaskWithWork() :works(new boost::asio::io_service::work(ios))
+{
+}
+TaskWithWork::~TaskWithWork()
+{
+	if (works != NULL)
+	{
+		delete works;
+		works = NULL;
+	}
+}
+void TaskWithWork::foo()
+{
+	std::cout << " hello foo !!!!!!!!!!" << std::endl;
+}
+
+void TaskWithWork::post()
+{
+	ios.post(boost::bind(&TaskWithWork::foo, this));
+	boost::thread thd(boost::bind(&TaskWithWork::thd_fun, this));
+}
+void TaskWithWork::thd_fun()
+{
+	std::getchar();
+	if (works != NULL)
+	{
+		delete works;
+		works = NULL;
+	}
+}
+void TaskWithWork::run()
+{
+	ios.run(ec);
+}
+
+/*--------------------------------------------*/
+BaseNet::BaseNet(int posts):endpoint(boost::asio::ip::tcp::v4(),posts), acceptor(ios,endpoint)
+{
+}
+BaseNet::~BaseNet()
+{
+	for (std::vector<boost::asio::ip::tcp::socket*>::iterator it = socks.begin(); it != socks.end(); it++)
+	{
+		boost::asio::ip::tcp::socket* sockit = (*it);
+		if (sockit != NULL)
+		{
+			delete sockit;
+			sockit = NULL;
+		}
+	}
+	socks.clear();
+}
+
+void BaseNet::Async_Session(boost::asio::ip::tcp::socket* iosocket)
+{
+	std::cout << " connect successs !!!!!" << std::endl;
+
+	char data[MAXLENBUF] = {};
+
+	for (;;)
+	{
+		boost::system::error_code error_code;
+		size_t length = iosocket->read_some(boost::asio::buffer(data), error_code);
+		if (error_code == boost::asio::error::eof)
+			break;
+		else if (error_code)
+		{
+			std::cout << " there is something wrong happened!!!!!!!" << error_code.message() << std::endl;
+			break;
+		}
+		std::cout << "received  size :" << length << " contents: " << data << std::endl;
+		iosocket->write_some(boost::asio::buffer(data,length), error_code);
+		if (error_code)
+		{
+			std::cout << " write wrong  happened !!!!!!!!!!!" << error_code.message() << std::endl;
+		}
+	}
+	delete iosocket;
+	iosocket = NULL;
+	std::cout << " connection over!!!" << std::endl;
+}
+
+void BaseNet::WaitConnect()
+{
+	for (;;)
+	{
+		boost::asio::ip::tcp::socket* sockde = new boost::asio::ip::tcp::socket(ios);
+		socks.push_back(sockde);
+		acceptor.accept(*sockde);
+
+		boost::thread(boost::bind(&BaseNet::Async_Session, this, sockde)).detach();
+		
+	}
+}

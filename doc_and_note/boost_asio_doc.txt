@@ -101,3 +101,248 @@ int main(int argc, char* argv[])
 你就需要boost::asio::io_service::work来帮忙，这个类的作用就是让io_service一直处于有事可做的状态而不会从run函数中
 退出，这样就避免了我们自己写循环重复调用run函数。当work析构而且没有任务的时候，run就会返回，测试代码如下
 
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+boost::asio::io_service::work* work = NULL;
+
+void foo()
+{
+    std::cout << "hello" << std::endl;
+}
+
+void thd_fun()
+{
+    std::getchar();
+    delete work;
+}
+
+int main(int argc, char* argv[])
+{
+    boost::asio::io_service ios;
+
+    ios.post(foo);
+
+    work = new boost::asio::io_service::work(ios);
+
+    boost::thread thd(thd_fun);
+
+    boost::system::error_code ec;
+
+    std::cout << "before run" << std::endl;
+    ios.run(ec);
+    std::cout << "after run" << std::endl;
+
+    return 0;
+}
+
+asio 3-----------------------------------------------
+asio支持同步和异步的网络操作，而且可以混用。可能有人会吐槽我之前为啥只写异步的东西，因为同步的话其实就只直接调用函数..
+那样的话跟asio一点关系都没有了我还写啥。不过网络方面的函数到时可以一写，不过这样就是放弃了asio的异步功能。
+对于异步和同步的优缺点，其实我自己也说不太清楚，毕竟也是刚接触异步不久，也不好乱说，所以目前就只管学会怎么用，但是
+大多数人都是对同步的操作比较熟悉，所以这里还是先写一下asio进行同步的网络操作的方法。
+
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+void session(boost::asio::ip::tcp::socket* sock)
+{
+    std::cout << "有客户端连接" << std::endl;
+
+    char data[1024];
+
+    for (;;)
+    {
+        boost::system::error_code error;
+        size_t length = sock->read_some(boost::asio::buffer(data), error);
+        if (error == boost::asio::error::eof)
+            break; // Connection closed cleanly by peer.
+        else if (error)
+        {
+            std::cout << "read_some发生错误：" << error.message() << std::endl; // Some other error.
+            break;
+        }
+
+        boost::asio::write(*sock, boost::asio::buffer(data, length),error);
+        if (error)
+        {
+            std::cout << "write发生错误：" << error.message() << std::endl;
+            break;
+        }
+    }
+
+    delete sock;
+
+    std::cout << "完事走掉了" << std::endl;
+}
+
+int main(int argc, char* argv[])
+{
+    boost::asio::io_service ios;
+    boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(),1234);
+
+    boost::asio::ip::tcp::acceptor acceptor(ios, endpoint);
+
+    for (;;)
+    {
+        boost::asio::ip::tcp::socket* sock = new boost::asio::ip::tcp::socket(ios);
+        acceptor.accept(*sock);
+
+        boost::thread(&session, sock).detach();
+    }
+
+    return 0;
+}
+
+boost::asio::io_service ios;这个大家都知道是啥了，但是还是得说一下，虽然在同步的程序里面这玩意意义不大，但是还是必须要有的，如果
+你确定io_service里面没有要执行的异步任务，可以不用调用ios.run()，即使是调用了也会立即返回，如果不确定的话还是调用一下ios.stopped()
+确认一下或者直接调用一下run函数确定的吧一步任务也都做完。
+boost::asio::ip::tcp::endpoint表示一个tcp的endpoint（我不知道这个endpoint该怎么翻译好..）。asio中用一个endpoint来表示一个节点，因
+为asio不只是支持一种协议，每种协议都有个endpoint来表示一个节点，tpc协议的一个节点的标识就是IP地址和端口号，有了IP地址和端口号就能
+找到这个节点，所以endpoint的初始化需要一个IP地址和一个端口号。这里因为要监听本地网卡上的所有的IP地址，所以就用了
+boost::asio::ip::tcp::v4()
+后面的1234自然就是端口号了。如果你想从一个字符串转换成endpoint也可以这么写：
+boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address::from_string(std::string("127.0.0.1")), 1234);
+boost::asio::ip::address::from_string()函数可以从字符串里面解析得到一个IP地址，他可以自动检测你输入的字符串是IPv4还是v6的。如果自
+己确定是v4还是v6，可以明确地用boost::asio::ip::address_v4::from_string()或者boost::asio::ip::address_6::from_string()。
+有了endpoint了，我们就可以继续往下搞了，如果这个endpoint是我们自己，我们可以在这个endpoint上进行监听，等待别人来进行连接，如果是一个远程的endpoint，
+我们可以连接这个endpoint（不过好像asio中很少用endpoint来进行连接，用什么等后面写连接的client的时候说）。这里我们是要做server，肯定就是要在这个endpoint上
+进行监听。
+asio把原来的socket的bind、listen、accept之类的操作都封装成了一个类boost::asio::ip::tcp::acceptor，把io_service 和endpoint传给他创建一个acceptor，
+然后调用accept成员函数就可以等待客户端的连接了。accept函数需要一个boost::asio::ip::tcp::socket，这个就是与该客户端连接的socket句柄，后续与该客户端的通讯都需要他
+。因为这个类不准拷贝，为了防止他析构只能new出来了，在不用的时候自己delete。
+接到一个客户端的连接就开一个线程与他通信，主线程继续accept，同步网络通讯的典型做法，不废话了，看session函数里面的操作。
+也很简单，从客户端那里读取数据，然后原封不动的写回去。这里要注意下read_some和read的区别，
+read_some是读取到一段数据就返回，不管读取的大小是否已经达到用户提供的缓冲区大小，什么时候返回跟tcp协议和操作系统的实现有关，这点我也不太了解，就不乱说了；
+read则是一直读取直到读取到用户指定的大小然后才返回，没有读取完是不会返回的；
+相同原理的还有write_some和write。
+不过我有一点不太理解的是read_some和write_some是boost::asio::ip::tcp::socket的成员函数，而read和write则是boost::asio命名空间下的独立的函数.
+
+asio4------------------------
+同步的发起连接和发送数据的相关的函数
+
+#include <boost/asio.hpp>
+#include <iostream>
+#include <string>
+
+int main(int argc, char* argv[])
+{
+    boost::asio::io_service io_service;
+
+    boost::asio::ip::tcp::resolver resolver(io_service);
+    boost::asio::ip::tcp::resolver::query query(boost::asio::ip::tcp::v4(), "127.0.0.1", "1234");
+    boost::asio::ip::tcp::resolver::iterator iterator = resolver.resolve(query);
+
+    boost::asio::ip::tcp::socket sock(io_service);
+    boost::asio::connect(sock, iterator);
+
+    for (;;)
+    {
+        std::string line;
+        getline(std::cin, line);
+
+        boost::asio::write(sock, boost::asio::buffer(line.c_str(), line.size()+1));
+
+        char reply[1024];
+
+        boost::asio::read(sock, boost::asio::buffer(reply, line.size() + 1));
+
+        std::cout << reply << std::endl;
+    }
+
+    return 0;
+}
+这里的boost::asio::ip::tcp::resolver就是前一篇文章说的其他的创建endpoint进行连接的方法，要说这个resolver跟跟直接创建endpoint的区别，
+个人感觉是resolver更方便一些，不但能解析IP地址的字符串，还能根据服务名解析出相应的端口，并且有的函数的参数只能是resolve返回的iterator。
+其实这个类就是对getaddrinfo这个socket函数的一个封装，想要详细了解的童鞋可以去看看unix网络编程。resolve返回的是一个iterator，
+原因是写的是主机名的话可能返回的IP地址不止一个，但是绝大多数时候我们都是写的IP地址，所以只取第一个iterator就行了；iterator->endpoint()
+则可以方便的获取这个iterator对应的endpoint。
+有了endpoint之后，我们就可以连接这个endpoint了，connect是一个单独的函数，可能是因为功能比较单一就没有封装成类。boost::asio::connect需要的
+是一个resolver返回的iterator而不是一个endpoint，这点我也比较奇怪；然后是一个boost::asio::ip::tcp::socket，连接成功后这个就是连接的socket句柄。
+
+asio5 -------------------------------
+
+
+// asio_sample.cpp : 定义控制台应用程序的入口点。
+//
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <iostream>
+
+boost::asio::io_service ios;
+boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), 1234);
+boost::asio::ip::tcp::acceptor acceptor(ios, endpoint);
+
+char data[1024];
+
+void handle_read(boost::asio::ip::tcp::socket* sock,
+    const boost::system::error_code& error,
+    size_t bytes_transferred);
+
+void handle_write(boost::asio::ip::tcp::socket* sock,
+    const boost::system::error_code& error,
+    size_t bytes_transferred)
+{
+    if (error)
+    {
+        std::cout << "write发生错误：" << error.message() << std::endl;
+        delete sock;
+        return;
+    }
+
+    sock->async_read_some(boost::asio::buffer(data),
+        boost::bind(handle_read, sock,
+        boost::asio::placeholders::error,
+        boost::asio::placeholders::bytes_transferred));
+}
+
+void handle_read(boost::asio::ip::tcp::socket* sock,
+    const boost::system::error_code& error,
+    size_t bytes_transferred)
+{
+    if (error)
+    {
+        std::cout << "read发生错误：" << error.message() << std::endl;
+        delete sock;
+        return;
+    }
+
+    boost::asio::async_write(*sock, boost::asio::buffer(data, bytes_transferred),
+        boost::bind(handle_write, sock,
+        boost::asio::placeholders::error,
+        boost::asio::placeholders::bytes_transferred));
+}
+
+void session(boost::asio::ip::tcp::socket* sock,
+    const boost::system::error_code& error)
+{
+    if (error)
+    {
+        delete sock;
+    }
+    else
+    {
+        std::cout << "有客户端连接" << std::endl;
+
+        sock->async_read_some(boost::asio::buffer(data),
+            boost::bind(handle_read, sock,
+            boost::asio::placeholders::error,
+            boost::asio::placeholders::bytes_transferred));
+    }
+
+    boost::asio::ip::tcp::socket* s = new boost::asio::ip::tcp::socket(ios);
+    acceptor.async_accept(*s, boost::bind(session, s,
+        boost::asio::placeholders::error));
+}
+
+int main(int argc, char* argv[])
+{
+    boost::asio::ip::tcp::socket* s = new boost::asio::ip::tcp::socket(ios);
+    acceptor.async_accept(*s, boost::bind(session, s, boost::asio::placeholders::error));
+
+    ios.run();
+    return 0;
+}
