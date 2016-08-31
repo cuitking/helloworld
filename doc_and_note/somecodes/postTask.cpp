@@ -1,6 +1,86 @@
-#include "postTask.h"
+ï»¿#include "postTask.h"
 
-TaskRun::TaskRun():sumNum(0)
+
+void CpostTask::foo()
+{
+	std::cout << " hello asio " << std::endl;
+}
+void CpostTask::post()
+{
+	ios.post(boost::bind(&CpostTask::foo, this));
+}
+void CpostTask::run()
+{
+	ios.run();
+}
+
+
+CpostTaskIN::CpostTaskIN()
+{
+}
+
+CpostTaskIN::~CpostTaskIN()
+{
+}
+void CpostTaskIN::handler_foo()
+{
+	std::cout << "misson complete !!!!!!!!!!!" << std::endl;
+}
+void CpostTaskIN::foo(handler_t handler)
+{
+	std::cout << "begin excute asio ,hello aiso !!!!" << std::endl;
+
+	handler(this);
+}
+
+void CpostTaskIN::post()
+{
+	ios.post(boost::bind(&CpostTaskIN::foo, this, &CpostTaskIN::handler_foo));
+}
+
+void CpostTaskIN::run()
+{
+	ios.run();
+}
+
+
+PostTaskThreads::PostTaskThreads()
+{
+
+}
+
+PostTaskThreads::~PostTaskThreads()
+{
+	
+}
+
+void PostTaskThreads::foo()
+{
+	std::cout << "hello asio !!! thread ID : " << boost::this_thread::get_id() << std::endl;
+}
+
+void PostTaskThreads::postTask(int num)
+{
+	for (int i = 0; i < num; ++i)
+	{
+		ios.post(boost::bind(&PostTaskThreads::foo,this));
+	}
+}
+
+void PostTaskThreads::addToThreads(int threadsNum)
+{
+	for (int i = 0; i < threadsNum; ++i)
+	{
+		threads.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
+	}
+}
+
+void PostTaskThreads::joinAll()
+{
+	threads.join_all();
+}
+
+TaskRun::TaskRun() :sumNum(0)
 {
 
 }
@@ -25,7 +105,7 @@ void TaskRun::run()
 {
 
 	//ios.run();
-	while (!ios.stopped()) ///ÓëÊ¹ÓÃios.run() ÓÐÏàÍ¬µÄÐ§¹û
+	while (!ios.stopped()) ///Ã“Ã«ÃŠÂ¹Ã“Ãƒios.run() Ã“ÃÃÃ ÃÂ¬ÂµÃ„ÃÂ§Â¹Ã»
 	{
 		ios.run_one();
 	}
@@ -33,7 +113,7 @@ void TaskRun::run()
 
 
 /*-------------------------------------------------------*/
-TaskFileSystem::TaskFileSystem(const char* cPath):pa(cPath),di(pa,ec)
+TaskFileSystem::TaskFileSystem(const char* cPath) :pa(cPath), di(pa, ec)
 {
 }
 TaskFileSystem::~TaskFileSystem()
@@ -66,7 +146,7 @@ void TaskFileSystem::async_dir(boost::asio::io_service& io, boost::filesystem::d
 	boost::system::error_code ec;
 	++di;
 	ios.post(boost::bind(&TaskFileSystem::async_dir, this, boost::ref(ios), di));
-	
+
 }
 
 void TaskFileSystem::post()
@@ -123,7 +203,7 @@ void TaskWithWork::run()
 }
 
 /*--------------------------------------------*/
-BaseNet::BaseNet(int posts):endpoint(boost::asio::ip::tcp::v4(),posts), acceptor(ios,endpoint)
+BaseNet::BaseNet(int posts) :endpoint(boost::asio::ip::tcp::v4(), posts), acceptor(ios, endpoint)
 {
 }
 BaseNet::~BaseNet()
@@ -158,7 +238,7 @@ void BaseNet::Async_Session(boost::asio::ip::tcp::socket* iosocket)
 			break;
 		}
 		std::cout << "received  size :" << length << " contents: " << data << std::endl;
-		iosocket->write_some(boost::asio::buffer(data,length), error_code);
+		iosocket->write_some(boost::asio::buffer(data, length), error_code);
 		if (error_code)
 		{
 			std::cout << " write wrong  happened !!!!!!!!!!!" << error_code.message() << std::endl;
@@ -178,6 +258,42 @@ void BaseNet::WaitConnect()
 		acceptor.accept(*sockde);
 
 		boost::thread(boost::bind(&BaseNet::Async_Session, this, sockde)).detach();
-		
+
+	}
+}
+/*-------------asio 7 coroutine----------------*/
+Stackless::Stackless()
+{
+
+}
+
+Stackless::~Stackless()
+{
+	
+}
+
+int Stackless::foo(boost::asio::coroutine& ct)
+{
+	std::cout << " before reenter " << std::endl;
+
+	reenter(ct)
+	{
+		std::cout << " before yield1 " << std::endl;
+		yield std::cout << " yield1 " << std::endl;
+		std::cout << "before yield2 " << std::endl;
+		yield return 1;
+	}
+
+	std::cout << "after reenter" << std::endl;
+	return 2;
+
+}
+
+void Stackless::check()
+{
+	while (!ct.is_complete())
+	{
+		int ret = foo(ct);
+		std::cout << " return : " << ret << std::endl;
 	}
 }

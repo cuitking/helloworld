@@ -477,7 +477,7 @@ handler中始终会得到大小为0；
 3.还有一个坑，就不写代码了。在同一个socket句柄上，不可以同时有多于一个异步读取或异步写入事件，必须等一个完成才能发下一个。
 原因很简单，一起读的话来了数据算谁的？一起写的话数据都写混乱了。
 
-asio7---------------------------------
+asio6---------------------------------
 基于asio echo server 改写 ,使用智能指针
 
 #include <cstdlib>
@@ -613,6 +613,40 @@ int main(int argc, char* argv[])
  如果出错，我们就不再继续发起任务，等函数结束时，引用计数就会自动变为0，shared_ptr会自动帮你delete掉这个对象。
 另外这里吧session的构造函数设置成私有的并且用了一个静态函数进行构建，是为了防止有人直接在栈上实例化了session类，这样做没啥意义，
 也可以减少new的出现（虽然我不知道减少new出现有啥好处）。
-asio 8 --------------------------------------------------
+asio 7 --------------------------------------------------
 
+asio中用到了两种coroutine，一个是asio作者自己写的stackless coroutine，一个是封装了Boost.Coroutine的spawn，
+Boost.Coroutine是boost库中的一个stackful coroutine。其实这两个的主要区别我觉得就是stackless的不能使用局部变量，但是速度较快；
+stackful的可以使用局部变量，但是速度可能不如stackless的。
+首先说一下coroutine是个什么玩意，其实很多语言中都有这个东西，个人感觉这个玩意就像hyq童鞋说的那样，就是个带状态的函数，每次调用执行不同的功能。
+先上一下stackless的coroutine的简单示例：
+#include <iostream>
+#include <boost/asio/yield.hpp>
+
+int foo(boost::asio::coroutine& ct)
+{
+    std::cout << "before reenter" << std::endl;
+
+    reenter(ct)
+    {
+        std::cout << "before yield1" << std::endl;
+        yield std::cout << "yield1" << std::endl;
+        std::cout << "before yield2" << std::endl;
+        yield return 1;
+    }
+
+    std::cout << "after reenter" << std::endl;
+    return 2;
+}
+
+int main(int argc, char* argv[])
+{
+    boost::asio::coroutine ct;
+    while (!ct.is_complete())
+    {
+        int ret = foo(ct);
+        std::cout << "return:" << ret << std::endl;
+    }
+    return 0;
+}
 

@@ -1,7 +1,50 @@
 #pragma once
 #ifndef _POSTTASK_H_
 #define _POSTTASK_H_
+
 #include "type.h"
+
+class CpostTask 
+{
+public:
+	CpostTask() {}
+	~CpostTask() {}
+	void foo();
+	void post();
+	void run();
+private:
+	boost::asio::io_service ios;
+
+};
+class CpostTaskIN;
+typedef std::function<void(CpostTaskIN*)> handler_t;
+
+class CpostTaskIN
+{
+public:
+	CpostTaskIN();
+	~CpostTaskIN();
+	void handler_foo();
+	void foo(handler_t handler);
+	void post();
+	void run();
+private:
+	boost::asio::io_service ios;
+};
+
+class PostTaskThreads
+{
+public:
+	PostTaskThreads();
+	~PostTaskThreads();
+	void foo();
+	void postTask(int num);
+	void addToThreads(int threadsNum);
+	void joinAll();
+private:
+	boost::asio::io_service ios;
+	boost::thread_group threads;
+};
 
 class TaskRun {
 public:
@@ -60,4 +103,17 @@ private:
 	boost::asio::ip::tcp::acceptor acceptor;
 	std::vector<boost::asio::ip::tcp::socket*> socks;
 };
+
+/* -----------asio 7 boost.coroutine stackless---------*/
+class Stackless 
+{
+public:
+	Stackless();
+	~Stackless();
+	int foo(boost::asio::coroutine& ct);
+	void check();
+private:
+	boost::asio::coroutine ct;
+};
 #endif // !_POSTTASK_H_
+
