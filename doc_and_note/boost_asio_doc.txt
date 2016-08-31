@@ -263,7 +263,8 @@ int main(int argc, char* argv[])
 是一个resolver返回的iterator而不是一个endpoint，这点我也比较奇怪；然后是一个boost::asio::ip::tcp::socket，连接成功后这个就是连接的socket句柄。
 
 asio5 -------------------------------
-
+前面也说过，asio的异步网络函数和同步的差别不大，只是异步和同步的思想的差别。如果前面的同步的函数都搞懂了，那只需要转换一下思维方式就可以了
+——把要做的事提交给io_service，在run中执行他们，在事件完成的通知中进行下一步的操作
 
 // asio_sample.cpp : 定义控制台应用程序的入口点。
 //
@@ -346,3 +347,184 @@ int main(int argc, char* argv[])
     ios.run();
     return 0;
 }
+跟同步的那个echo server是一样的东西功能，就不截图了。而且为了容易看清条理实现的比较丑陋。可以看出来这里并没有使用线程，却实现了跟同步多线程的
+echo server相同的功能——可以同时跟多个客户端通信。下面就详细解释一下代码。
+为了使用方便我把boost::asio::io_service、boost::asio::ip::tcp::endpoint和boost::asio::ip::tcp::acceptor定义成了全局变量，这三个类的使用和同步程序中
+的一模一样就不多说了。下面依然是每个boost::asio::ip::tcp::socket代表收到的一个请求，不同的是这次没有开新的线程，而是直接在async_accept的handler
+（也就是session函数）中进行的处理，在session函数中，我们先发了一个异步读取数据的“任务”
+（sock->async_read_some）给io_service，然后又发了一个异步接收请求的“任务”（acceptor.async_accept）给io_service，
+因为只是发任务，函数式立即返回的，因此我们可以认为这两个任务在同时进行。发读取数据的任务是为了接受客户端发来的数据，发accept任务是为了等待其他的客户端的连接。
+在同步的程序中，不开多个线程是不可能做到的，因为我们如果先执行read任务的话，而客户端一直不发送数据，我们会一直阻塞在read函数里面；accept也是同样的道理。
+发了这两个任务之后，我们就进入了两个“循环”中，不明白这两个循环怎么来的请仔细看这里，一个循环一直等待客户的连接，另一个循环则重复执行着
+读取数据->返回给客户端->继续读取->返回给客户端....直到客户端下线或者其他错误发生时，就不再发异步任务，循环也就停止了。这样就实现了一个线程，多个循环。
+
+应该很容易就能看出其实异步的网络函数和同步的差别不大，不过是多了个完成后的回调，结果都在回调中得知。你的回调需要哪方面的结果，
+就bind上boost::asio::placeholders命名空间下的对应的项。其中比较常用的是boost::asio::placeholders::error和boost::asio::placeholders::bytes_transferred，
+分别表示异步事件执行是否出错以及传送的数据的字节数。其他的项我也没用过，以后用到再说。
+
+/异步读取完成的handler
+void handle_read(boost::asio::ip::tcp::socket* sock,size_t size,
+    const boost::system::error_code& error,
+    size_t bytes_transferred);
+
+......
+//某个函数中
+    size_t size = 0;
+    boost::asio::async_read(*sock,boost::asio::buffer(&size,sizeof(size)),
+        boost::bind(handle_read,sock,size,
+        boost::asio::placeholders::error,
+        boost::asio::placeholders::bytes_transferred));
+.......
+
+这段代码有两个严重的错误：
+1.要确定异步读取的目标缓冲区的存活时间不能比事件的完成时间短，不管是异步读取还是异步写入。因为事件完成几乎总是在发起异步事件的函数（调用
+ async_read或async_write的函数）完成之后才会触发，这时候上面代码中的size已经析构了，异步读取或写入会写入到一个不存在的 
+ buffer中，局部变量是放在栈上，这时这个变量的位置可能已经变成了另一个变量了，这肯定不是我们想要的结果。
+2.不要把异步读取写入的目标bind到读取完成的handler上。因为bind实际上是吧size的值（0）保存了下来，所以，不管读取到的实际大小是多少，
+handler中始终会得到大小为0；
+3.还有一个坑，就不写代码了。在同一个socket句柄上，不可以同时有多于一个异步读取或异步写入事件，必须等一个完成才能发下一个。
+原因很简单，一起读的话来了数据算谁的？一起写的话数据都写混乱了。
+
+asio7---------------------------------
+基于asio echo server 改写 ,使用智能指针
+
+#include <cstdlib>
+#include <iostream>
+#include <boost/bind.hpp>
+#include <boost/asio.hpp>
+#include <boost/smart_ptr.hpp>
+
+using boost::asio::ip::tcp;
+
+class session : public boost::enable_shared_from_this<session>
+{
+public:
+
+    typedef boost::shared_ptr<session> session_ptr;
+
+    static session_ptr get_new_session(boost::asio::io_service& io_service)
+    {
+        return session_ptr(new session(io_service));
+    }
+    tcp::socket& socket()
+    {
+        return socket_;
+    }
+
+    ~session()
+    {
+        std::cout << "析构" << std::endl;
+    }
+
+    void start()
+    {
+        socket_.async_read_some(boost::asio::buffer(data_, max_length),
+            boost::bind(&session::handle_read, shared_from_this(),
+            boost::asio::placeholders::error,
+            boost::asio::placeholders::bytes_transferred));
+    }
+
+private:
+    session(boost::asio::io_service& io_service)
+        : socket_(io_service)
+    {
+    }
+
+    void handle_read(const boost::system::error_code& error,
+        size_t bytes_transferred)
+    {
+        if (!error)
+        {
+            boost::asio::async_write(socket_,
+                boost::asio::buffer(data_, bytes_transferred),
+                boost::bind(&session::handle_write, shared_from_this(),
+                boost::asio::placeholders::error));
+        }
+    }
+
+    void handle_write(const boost::system::error_code& error)
+    {
+        if (!error)
+        {
+            socket_.async_read_some(boost::asio::buffer(data_, max_length),
+                boost::bind(&session::handle_read, shared_from_this(),
+                boost::asio::placeholders::error,
+                boost::asio::placeholders::bytes_transferred));
+        }
+    }
+
+    tcp::socket socket_;
+    enum { max_length = 1024 };
+    char data_[max_length];
+};
+
+class server
+{
+public:
+    server(boost::asio::io_service& io_service, short port)
+        : io_service_(io_service),
+        acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
+    {
+        start_accept();
+    }
+
+private:
+    void start_accept()
+    {
+        session::session_ptr new_session = session::get_new_session(io_service_);
+        acceptor_.async_accept(new_session->socket(),
+            boost::bind(&server::handle_accept, this, new_session,
+            boost::asio::placeholders::error));
+    }
+
+    void handle_accept(session::session_ptr new_session,
+        const boost::system::error_code& error)
+    {
+        if (!error)
+        {
+            new_session->start();
+        }
+
+        start_accept();
+    }
+
+    boost::asio::io_service& io_service_;
+    tcp::acceptor acceptor_;
+};
+
+int main(int argc, char* argv[])
+{
+    try
+    {
+        if (argc != 2)
+        {
+            std::cerr << "Usage: async_tcp_echo_server <port>\n";
+            return 1;
+        }
+
+        boost::asio::io_service io_service;
+
+        using namespace std; // For atoi.
+        server s(io_service, atoi(argv[1]));
+
+        io_service.run();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << "\n";
+    }
+
+    return 0;
+}
+代码很简单，一个server类，里面循环accept新的客户端的连接，收到之后创建一个新的session类，session类中循环async_read
+ 、async_write，与asio原示例不同之处仅仅是把里面所有的delete this去掉了。因为使用了shared_ptr和enable_shared_from_this，
+ 只要async_read 、async_write的循环没有终止，则必定会有某个bind持有一个session的shared_ptr，保存在bind返回的function里面，
+ 只要我们在这个function结束之前再次发起一个异步任务并把session的shared_ptr给bind上去，这个指针的引用计数就不会变为0，也就不会析构；
+ 如果出错，我们就不再继续发起任务，等函数结束时，引用计数就会自动变为0，shared_ptr会自动帮你delete掉这个对象。
+另外这里吧session的构造函数设置成私有的并且用了一个静态函数进行构建，是为了防止有人直接在栈上实例化了session类，这样做没啥意义，
+也可以减少new的出现（虽然我不知道减少new出现有啥好处）。
+
+asio 8 --------------------------------------------------
+
+
+
