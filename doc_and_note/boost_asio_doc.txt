@@ -1,0 +1,124 @@
+asio 学习笔记论坛地址：http://godebug.org/index.php/archives/56/
+
+一般来说大多数人使用asio都是用它来做异步的网络库来使用,但是asio本质上是一个通用的异步库，
+并不是只能用来做网络通信，
+异步的概念其实很简单，你把要做的事情告诉可以完成这件事的库或者操作系统，由库或操作系统帮你
+完成并通知你，在此期间你可以做其他的操作。
+asio异步的核心其实就是一个boost::asio::io_service类，可以想象成一个发动机，你有事情要做，就
+扔给他，他就帮你完成，你把事情告诉他之后并不需要一直等待事情的完成，而是可以马上去做其他的事情，
+其中类的成员函数post()就是提交要做的事情，成员函数run()就是启动发动机.
+
+#include <boost/asio.hpp>
+#include <iostream>
+
+void testfoo()
+{
+	std::cout << " hello testfoo !!!!" << std::endl;
+
+}
+
+int main(int argc, char** argv)
+{
+	boost::asio::io_service ios;
+	ios.post(testfoo);
+	std::cout << " after ios post!!!!" << std::endl;
+	ios.run();
+	system("pause");
+	return 0;
+}
+输出：
+ after ios post!!!!!
+ hello testfoo !!!!!
+ 可以看到提交“任务”之后并没有马上执行，而是等到了run的时候才开始执行的。看起来很简单是吧，
+ 假设foo函数式是系统提供的，但是提供了个回调函数在完成后会进行调用来通知我们。
+
+ #include <boost/asio.hpp>
+ #include <boost/bind/bind.hpp>
+ #include <iostream>
+ #include <functional>
+
+ typedef std::function<void()> handler_t;
+ void foo(handler_t handler)
+ {
+ 	std::cout << "hello asio foo" << std::endl;
+
+ 	handler();
+ }
+
+ void handler_fun()
+ {
+ 	std::cout << " mission complete!!!!" << std::endl;
+ }
+
+ int main(int argc, char ** argv)
+ {
+ 	boost::asio::io_service ios;
+ 	ios.post(boost::bind(foo, handler_fun));
+
+ 	std::cout << "after post" << std::endl;
+ 	ios.run();
+ 	return 0;
+ }
+
+ 其实asio的网络操作函数也与此类似,foo是执行指定任务的函数，执行完成后就调用我们的handler来通知
+ 我们，这样我们就可以不用一直等待操作完成，立即去执行其他的任务。
+ 这样做还有一个优点是可以在多个线程上执行run函数，可以更充分利用多核的性能，“任务”并不是在
+ 提交任务的线程中执行的，而是在执行run的线程中执行的，如果多个线程同时执行同一个io_service对象
+ 的run函数，则会每个线程都去从这个service的“任务列表”里面获取任务去执行.
+
+#include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+void foo()
+{
+	std::cout << "hello asio , thread ID : " << boost::this_thread:get_id() << std::endl;
+}
+
+int main(int argc, char ** argv)
+{
+	boost::asio::io_service ios;
+
+	for (int i = 0; i < 1000; ++i)
+	{
+		ios.post(foo);
+	}
+
+	boost::thread_group threads;
+	for (int i = 0; i < 4; ++i)
+	{
+		threads.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
+	}
+	threads.join_all();
+	return 0;
+}
+
+asio 2--------------------------------
+io_service::run函数什么时候会退出
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+int num = 0;
+void foo()
+{
+	std::cout << "hello " << ++num << std::endl;
+}
+
+int main(int argc, char* argv[])
+{
+	boost::asio::io_service ios;
+
+	for (int i = 0; i < 10; ++i)
+	{
+		ios.post(foo);
+	}
+
+	std::cout << " excute run function before!!!!" << std::endl;
+	ios.run();
+	std::cout <<　" run function has finished !!!!!" << std::endl;
+	return 0;
+}
+
+
