@@ -650,3 +650,82 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+简单来说就是首先会执行reenter之前的代码（打印before reenter），当函数运行到reenter范围内的时候，第一次会执行第一个yield之前的代码
+（打印before yield1）和yield关键词之后跟的那个语句（打印 yield1），然后直接跳出reenter范围执行之后的代码（打印after reenter和return 2）；
+第二次调用时进入reenter后则会直接从第一个yield下面开始执行，执行到第二个yield结束，因为yield后面接的是一个return语句，
+所以reenter范围后面的代码没有执行；当没有yield可以继续执行的时候，就不再进入reenter了。
+灰常简单，其实就是个switch case，我都觉得自己用switch case实现个肯定不比这个差。不过这几天学习asio下来发现，asio本身根本就没啥可学习的高级的东西，
+都是在学他的思想，虽然只是这么简单的一段代码，换个思维方式可能就会有很大作用，一般在异步程序中使用coroutine就是为了少写一些回调。
+如果一个协议里面要有顺序的读写几十次的话，对于同步的操作来说很简单，一路按照协议read、write、read、write下来就行了，但是异步的就不行了，
+你必须在上一个read或者write完成的handler中发起下一次的read或者write，协议稍微一复杂，回调函数就会多得让你恶心，这个时候coroutine就派上用场了，
+只需要一个回调函数，只要不停的调用就好了，函数会自动的按照你写得yield的顺序执行相应的代码，让代码看起来就像是同步的一样
+// asio_sample.cpp : 定义控制台应用程序的入口点。
+//
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/asio/yield.hpp>
+#include <iostream>
+
+boost::asio::io_service ios;
+boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), 1234);
+boost::asio::ip::tcp::acceptor acceptor(ios, endpoint);
+
+char data[1024];
+
+void handle(boost::asio::coroutine ct,boost::asio::ip::tcp::socket* sock,
+    const boost::system::error_code& error,size_t bytes_transferred)
+{
+    if (error)
+    {
+        std::cout << "read发生错误：" << error.message() << std::endl;
+        delete sock;
+        return;
+    }
+
+    reenter(ct)
+    {
+        yield boost::asio::async_write(*sock, boost::asio::buffer(data, bytes_transferred),
+            boost::bind(handle,ct, sock,
+            boost::asio::placeholders::error,
+            boost::asio::placeholders::bytes_transferred));
+
+        yield sock->async_read_some(boost::asio::buffer(data),
+            boost::bind(handle, boost::asio::coroutine(),sock,
+            boost::asio::placeholders::error,
+            boost::asio::placeholders::bytes_transferred));
+    }
+
+}
+
+void session(boost::asio::ip::tcp::socket* sock,
+    const boost::system::error_code& error)
+{
+    if (error)
+    {
+        delete sock;
+    }
+    else
+    {
+        std::cout << "有客户端连接" << std::endl;
+
+        sock->async_read_some(boost::asio::buffer(data),
+            boost::bind(handle, boost::asio::coroutine(),sock,
+            boost::asio::placeholders::error,
+            boost::asio::placeholders::bytes_transferred));
+    }
+
+    boost::asio::ip::tcp::socket* s = new boost::asio::ip::tcp::socket(ios);
+    acceptor.async_accept(*s, boost::bind(session, s,
+        boost::asio::placeholders::error));
+}
+
+int main(int argc, char* argv[])
+{
+    boost::asio::ip::tcp::socket* s = new boost::asio::ip::tcp::socket(ios);
+    acceptor.async_accept(*s, boost::bind(session, s, boost::asio::placeholders::error));
+
+    ios.run();
+    return 0;
+}
+

@@ -1,86 +1,6 @@
-ï»¿#include "postTask.h"
+#include "postTask.h"
 
-
-void CpostTask::foo()
-{
-	std::cout << " hello asio " << std::endl;
-}
-void CpostTask::post()
-{
-	ios.post(boost::bind(&CpostTask::foo, this));
-}
-void CpostTask::run()
-{
-	ios.run();
-}
-
-
-CpostTaskIN::CpostTaskIN()
-{
-}
-
-CpostTaskIN::~CpostTaskIN()
-{
-}
-void CpostTaskIN::handler_foo()
-{
-	std::cout << "misson complete !!!!!!!!!!!" << std::endl;
-}
-void CpostTaskIN::foo(handler_t handler)
-{
-	std::cout << "begin excute asio ,hello aiso !!!!" << std::endl;
-
-	handler(this);
-}
-
-void CpostTaskIN::post()
-{
-	ios.post(boost::bind(&CpostTaskIN::foo, this, &CpostTaskIN::handler_foo));
-}
-
-void CpostTaskIN::run()
-{
-	ios.run();
-}
-
-
-PostTaskThreads::PostTaskThreads()
-{
-
-}
-
-PostTaskThreads::~PostTaskThreads()
-{
-	
-}
-
-void PostTaskThreads::foo()
-{
-	std::cout << "hello asio !!! thread ID : " << boost::this_thread::get_id() << std::endl;
-}
-
-void PostTaskThreads::postTask(int num)
-{
-	for (int i = 0; i < num; ++i)
-	{
-		ios.post(boost::bind(&PostTaskThreads::foo,this));
-	}
-}
-
-void PostTaskThreads::addToThreads(int threadsNum)
-{
-	for (int i = 0; i < threadsNum; ++i)
-	{
-		threads.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
-	}
-}
-
-void PostTaskThreads::joinAll()
-{
-	threads.join_all();
-}
-
-TaskRun::TaskRun() :sumNum(0)
+TaskRun::TaskRun():sumNum(0)
 {
 
 }
@@ -105,7 +25,7 @@ void TaskRun::run()
 {
 
 	//ios.run();
-	while (!ios.stopped()) ///Ã“Ã«ÃŠÂ¹Ã“Ãƒios.run() Ã“ÃÃÃ ÃÂ¬ÂµÃ„ÃÂ§Â¹Ã»
+	while (!ios.stopped()) ///ÓëÊ¹ÓÃios.run() ÓÐÏàÍ¬µÄÐ§¹û
 	{
 		ios.run_one();
 	}
@@ -113,7 +33,7 @@ void TaskRun::run()
 
 
 /*-------------------------------------------------------*/
-TaskFileSystem::TaskFileSystem(const char* cPath) :pa(cPath), di(pa, ec)
+TaskFileSystem::TaskFileSystem(const char* cPath):pa(cPath),di(pa,ec)
 {
 }
 TaskFileSystem::~TaskFileSystem()
@@ -146,7 +66,7 @@ void TaskFileSystem::async_dir(boost::asio::io_service& io, boost::filesystem::d
 	boost::system::error_code ec;
 	++di;
 	ios.post(boost::bind(&TaskFileSystem::async_dir, this, boost::ref(ios), di));
-
+	
 }
 
 void TaskFileSystem::post()
@@ -203,7 +123,7 @@ void TaskWithWork::run()
 }
 
 /*--------------------------------------------*/
-BaseNet::BaseNet(int posts) :endpoint(boost::asio::ip::tcp::v4(), posts), acceptor(ios, endpoint)
+BaseNet::BaseNet(int posts):endpoint(boost::asio::ip::tcp::v4(),posts), acceptor(ios,endpoint)
 {
 }
 BaseNet::~BaseNet()
@@ -238,7 +158,7 @@ void BaseNet::Async_Session(boost::asio::ip::tcp::socket* iosocket)
 			break;
 		}
 		std::cout << "received  size :" << length << " contents: " << data << std::endl;
-		iosocket->write_some(boost::asio::buffer(data, length), error_code);
+		iosocket->write_some(boost::asio::buffer(data,length), error_code);
 		if (error_code)
 		{
 			std::cout << " write wrong  happened !!!!!!!!!!!" << error_code.message() << std::endl;
@@ -258,9 +178,91 @@ void BaseNet::WaitConnect()
 		acceptor.accept(*sockde);
 
 		boost::thread(boost::bind(&BaseNet::Async_Session, this, sockde)).detach();
-
+		
 	}
 }
+
+
+/*----------------------------------------------*/
+BaseServer::BaseServer(int ports):endpoint(boost::asio::ip::tcp::v4(), ports), acceptor(ios, endpoint)
+{
+
+}
+
+BaseServer::~BaseServer()
+{
+	for (std::vector<boost::asio::ip::tcp::socket*>::iterator it = socks.begin(); it != socks.end(); it++)
+	{
+		boost::asio::ip::tcp::socket* sockit = (*it);
+		if (sockit != NULL)
+		{
+			delete sockit;
+			sockit = NULL;
+		}
+	}
+	socks.clear();
+}
+
+void BaseServer::session(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error)
+{
+	if (error)
+	{
+		delete sock;
+		sock = NULL;
+	}
+	else
+	{
+		std::cout << " client connected " << std::endl;
+
+		sock->async_read_some(boost::asio::buffer(data),
+			boost::bind(&BaseServer::handler_read, this, sock,
+				boost::asio::placeholders::error,
+				boost::asio::placeholders::bytes_transferred));
+	}
+	boost::asio::ip::tcp::socket* ss = new boost::asio::ip::tcp::socket(ios);
+	socks.push_back(ss);
+	acceptor.async_accept(*ss, boost::bind(&BaseServer::session, this, ss, boost::asio::placeholders::error));
+
+}
+
+void BaseServer::handler_read(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error, size_t bytes_transferred)
+{
+	if (error)
+	{
+		std::cout << " read occured error " << error.message() << std::endl;
+		delete sock;
+		sock = NULL;
+		return;
+	}
+	std::cout << " read datas: " << data << std::endl;
+	boost::asio::async_write(*sock, boost::asio::buffer(data, bytes_transferred),
+		boost::bind(&BaseServer::handler_write, this, sock, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+
+}
+
+void BaseServer::handler_write(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error, size_t bytes_transferred)
+{
+	if (error)
+	{
+		std::cout << "write datas occured errors: " << error.message() << std::endl;
+		delete sock;
+		sock = NULL;
+		return;
+	}
+	boost::asio::async_read(*sock, boost::asio::buffer(data, bytes_transferred),
+		boost::bind(&BaseServer::handler_read, this, sock, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+
+}
+
+void BaseServer::run()
+{
+	boost::asio::ip::tcp::socket* isocket = new boost::asio::ip::tcp::socket(ios);
+	socks.push_back(isocket);
+	acceptor.async_accept(*isocket, boost::bind(&BaseServer::session, this, isocket, boost::asio::placeholders::error));
+
+	ios.run();
+}
+
 /*-------------asio 7 coroutine----------------*/
 Stackless::Stackless()
 {
@@ -269,7 +271,7 @@ Stackless::Stackless()
 
 Stackless::~Stackless()
 {
-	
+
 }
 
 int Stackless::foo(boost::asio::coroutine& ct)
@@ -296,4 +298,64 @@ void Stackless::check()
 		int ret = foo(ct);
 		std::cout << " return : " << ret << std::endl;
 	}
+}
+
+/*----------------------*/
+/*-------------with boost.coroutine -------------*/
+BoostCor::BoostCor(int ports):endpoint(boost::asio::ip::tcp::v4(), ports), acceptor(ios, endpoint)
+{
+
+}
+
+BoostCor::~BoostCor()
+{
+
+}
+
+void BoostCor::handle(boost::asio::coroutine ct, boost::asio::ip::tcp::socket* sock,
+	const boost::system::error_code& error, size_t bytes_transferred)
+{
+	if (error)
+	{
+		std::cout << " read error : " << error.message() << std::endl;
+		delete sock;
+	}
+	reenter(ct)
+	{
+		yield boost::asio::async_write(*sock, boost::asio::buffer(data, bytes_transferred),
+			boost::bind(&BoostCor::handle, this, ct, sock,
+				boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+
+		yield sock->async_read_some(boost::asio::buffer(data) ,
+			boost::bind(&BoostCor::handle, this, boost::asio::coroutine(), sock,
+				boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+	}
+}
+
+void BoostCor::session(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error)
+{
+	if (!error)
+	{
+		delete sock;
+	}
+	else
+	{
+		std::cout << " some client connected !!!!!" << std::endl;
+
+		sock->async_read_some(boost::asio::buffer(data),
+			boost::bind(&BoostCor::handle, this, boost::asio::coroutine(), sock,
+				boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+	}
+
+	boost::asio::ip::tcp::socket* socks = new boost::asio::ip::tcp::socket(ios);
+
+	acceptor.async_accept(*socks, boost::bind(&BoostCor::session, this, socks, boost::asio::placeholders::error));
+
+}
+
+void BoostCor::Run()
+{
+	boost::asio::ip::tcp::socket* sock = new boost::asio::ip::tcp::socket(ios);
+	acceptor.async_accept(*sock, boost::bind(&BoostCor::session, this, sock, boost::asio::placeholders::error));
+	ios.run();
 }

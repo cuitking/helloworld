@@ -10,7 +10,8 @@
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
-/*---------boost.coroutine ------------*/
+
+/*-------boost coroutine */
 #include <boost/asio/yield.hpp>
 
 #define MAXLENBUF 1024

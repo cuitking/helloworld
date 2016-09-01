@@ -1,50 +1,7 @@
 #pragma once
 #ifndef _POSTTASK_H_
 #define _POSTTASK_H_
-
 #include "type.h"
-
-class CpostTask 
-{
-public:
-	CpostTask() {}
-	~CpostTask() {}
-	void foo();
-	void post();
-	void run();
-private:
-	boost::asio::io_service ios;
-
-};
-class CpostTaskIN;
-typedef std::function<void(CpostTaskIN*)> handler_t;
-
-class CpostTaskIN
-{
-public:
-	CpostTaskIN();
-	~CpostTaskIN();
-	void handler_foo();
-	void foo(handler_t handler);
-	void post();
-	void run();
-private:
-	boost::asio::io_service ios;
-};
-
-class PostTaskThreads
-{
-public:
-	PostTaskThreads();
-	~PostTaskThreads();
-	void foo();
-	void postTask(int num);
-	void addToThreads(int threadsNum);
-	void joinAll();
-private:
-	boost::asio::io_service ios;
-	boost::thread_group threads;
-};
 
 class TaskRun {
 public:
@@ -104,8 +61,24 @@ private:
 	std::vector<boost::asio::ip::tcp::socket*> socks;
 };
 
+/*------------------------------------------*/
+class BaseServer {
+public:
+	BaseServer(int ports);
+	~BaseServer();
+	void session(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error);
+	void handler_write(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error, size_t bytes_transferred);
+	void handler_read(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error, size_t bytes_transferred);
+	void run();
+private:
+	boost::asio::io_service ios;
+	boost::asio::ip::tcp::endpoint endpoint;
+	boost::asio::ip::tcp::acceptor acceptor;
+	std::vector<boost::asio::ip::tcp::socket*> socks;
+	char data[MAXLENBUF];
+};
 /* -----------asio 7 boost.coroutine stackless---------*/
-class Stackless 
+class Stackless
 {
 public:
 	Stackless();
@@ -115,5 +88,20 @@ public:
 private:
 	boost::asio::coroutine ct;
 };
-#endif // !_POSTTASK_H_
 
+
+class BoostCor 
+{
+public:
+	BoostCor(int ports);
+	~BoostCor();
+	void handle(boost::asio::coroutine ct, boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error, size_t bytes_transferred);
+	void session(boost::asio::ip::tcp::socket* sock, const boost::system::error_code& error);
+	void Run();
+private:
+	boost::asio::io_service ios;
+	boost::asio::ip::tcp::endpoint endpoint;
+	boost::asio::ip::tcp::acceptor acceptor;
+	char data[MAXLENBUF];
+};
+#endif // !_POSTTASK_H_
