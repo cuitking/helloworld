@@ -3,3 +3,5 @@
 http://www.cnblogs.com/lonelycatcher/archive/2011/12/20/2294161.html
 
 http://coolshell.cn/articles/8239.html
+linux线程池的实现
+http://blog.csdn.net/nk_test/article/details/50835550
