@@ -1,4 +1,35 @@
 -------------------boost智能指针-------------------
+scoped_ptr<T> 
+跟std::auto_ptr一样用来管理单个堆内存对象，但是独享所有权，且不允许赋值和拷贝（没有重载operator=）。但是可以交换
+但是很多情况下我们都需要复制智能指针，scoped_ptr 就满足不了了。
+shared_ptr<T>
+内部维护一个引用计数来判断此指针是否需要被释放
+intrusive_ptr<T>
+维护一个轻量级的引用计数器，比shared_ptr有更好的性能，但要T自己提供计数器
+weak_ptr<T>
+弱指针,它不提供管理对象的生命周期，但它知道对象是否还活着,如果对象还活着，那么它可以提升为有效的shared_ptr，如果对象已经死了,
+则会提升失败，返回一个空的shared_ptr。
+boost::weak_ptr 是 boost::shared_ptr 
+的观察者，只对后者进行引用而不改变引用计数，当被观察的boost::shared_ptr失效后，相应的boost::weak_ptr 也失效。
+boost::weak_ptr 主要用在软件架构设计中，可以在基类中定义一个 boost::weak_ptr，指向子类的 boost::shared_ptr，这样基类通过观察自己的 boost::weak_ptr 是否为空就知道子类有没对自己赋值了，
+不会影响子类 boost::shared_ptr 的引用计数，用以降低复杂度，更好的管理对象。boost::weak_ptr 
+也用来解决boost::shared_ptr的循环引用问题。
+
+
+scoped_array<T>
+与scoped_ptr相似,用来处理数组
+shared_array<T>
+与shared_ptr相似,用来处理数组
+
+强引用与弱引用：
+强引用，只要有一个引用存在，对象就不能释放
+弱引用，并不增加对象的引用计数（实际上是不增加use_count_， 会增加weak_count_）；但它能知道对象是否存在
+通过weak_ptr访问对象的成员的时候，要提升为shared_ptr
+如果存在，提升为shared_ptr(强引用）成功
+如果不存在，提升失败
+
+
+
 
 http://blog.csdn.net/jnu_simba/article/details/9569593
 
@@ -35,7 +66,7 @@ if(shared_ptr<int> r = q.lock())
 auto global_pack(boost::make_shared<DEFAULT_PACKER>());
 boost::shared_ptr<DEFAULT_PACKER> global_pack(boost::make_shared<DEFAULT_PACKER>());
 
-
+-----------------------------------------------------------------------------------
 使用时,加入头文件 #include<algorithm>
 std::for_each 
 template<class InputIterator, class Function>
