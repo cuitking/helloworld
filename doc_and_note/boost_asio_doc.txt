@@ -729,3 +729,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+客户端断开服务器报错：delete sock; 之后要return
+
+
+
