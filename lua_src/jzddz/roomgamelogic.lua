@@ -121,10 +121,6 @@ local CardRuler = {
             if CardsKey[CardsObject[1]] == nil or CardsKey[CardsObject[2]] == nil or CardsKey[CardsObject[1]] ~= CardsKey[CardsObject[2]] then
                 return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
             end
---            ---花色不能一样，否则就不对
---            if CardsObject.m_keyColors[1] == CardsObject.m_keyColors[2] then
---                return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
---            end
             CardsObject.m_keyMaxValue = CardsValue[CardsObject[1]]
 
             return true, ECardType.DDZ_CARD_TYPE_PAIR
@@ -384,11 +380,7 @@ local CardRuler = {
                     and CardsObject.m_keyValue[1] ~= CardsObject.m_keyValue[2] ) then
                 return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
             end
-            if CardsObject.m_keyValue[1] == CardsObject.m_keyValue[2] then
-                CardsObject.m_keyMaxValue = CardsObject.m_keyValue[1]
-            else
-                CardsObject.m_keyMaxValue = CardsObject.m_keyValue[2]
-            end
+            CardsObject.m_keyMaxValue = CardsObject.m_keyValue[2]
             return true, ECardType.DDZ_CARD_TYPE_THREE_ONE
         end,
         isBigThan = function(lparam,rparam)
@@ -421,14 +413,34 @@ local CardRuler = {
             if CardsObject.m_nLen ~= 5 or #CardsObject.m_keyValue ~= 5 then
                 return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
             end
+            if(CardsObject.m_keyValue[1] == CardsObject.m_keyValue[2] and CardsObject.m_keyValue[3] == CardsObject.m_keyValue[4] 
+                and CardsObject.m_keyValue[3] == CardsObject.m_keyValue[5]) or (CardsObject.m_keyValue[1] == CardsObject.m_keyValue[2] and 
+                CardsObject.m_keyValue[3] == CardsObject.m_keyValue[4] and CardsObject.m_keyValue[3] == CardsObject.m_keyValue[5]) then
+                CardsObject.m_keyMaxValue = CardsObject.m_keyValue[3]
+            end
             
-            return true, ECardType.DDZ_CARD_TYPE_THREE_PAIR
+            return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
         end,
         isBigThan = function(lparam,rparam)
             if lparam.m_eCardType ~= ECardType.DDZ_CARD_TYPE_THREE_PAIR or
                     rparam.m_eCardType ~= (ECardType.DDZ_CARD_TYPE_THREE_PAIR or ECardType.DDZ_CARD_TYPE_BOMB or ECardType.DDZ_CARD_TYPE_ROCKET
                     or ECardType.DDZ_CARD_TYPE_SOFTBOMB or ECardType.DDZ_CARD_TYPE_TIANBOMB) then
                 return false
+            end
+            if rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_BOMB or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_ROCKET
+                    or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_SOFTBOMB or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_TIANBOMB then
+                return true
+            end
+            if lparam.m_eCardType == rparam.m_eCardType then
+                if lparam.m_nLen ~= rparam.m_nLen then
+                    return false
+                else
+                    if lparam.m_keyMaxValue < rparam.m_keyMaxValue then
+                        return true
+                    else
+                        return false
+                    end
+                end
             end
             return false
         end
@@ -454,18 +466,95 @@ local CardRuler = {
     -----13.四带二张
     [ECardType.DDZ_CARD_TYPE_FOUR_TWO_ONE] = {
         isMatched = function(CardsObject)
-            return true, ECardType.DDZ_CARD_TYPE_FOUR_TWO_ONE
+            if CardsObject.m_nLen ~= 6 then
+                return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
+            end
+            for i = 1,3 do
+                if (CardsObject.m_keyValue[i] == CardsObject.m_keyValue[i+1] and CardsObject.m_keyValue[i] == CardsObject.m_keyValue[i+2] 
+                    and CardsObject.m_keyValue[i] == CardsObject.m_keyValue[i+3]) then
+                    CardsObject.m_keyMaxValue = CardsObject.m_keyValue[i]
+                    return true, ECardType.DDZ_CARD_TYPE_FOUR_TWO_ONE
+                end
+            end
+            
+            return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
         end,
         isBigThan = function(lparam, rparam)
+            if lparam.m_eCardType ~= ECardType.DDZ_CARD_TYPE_FOUR_TWO_ONE or
+                    rparam.m_eCardType ~= (ECardType.DDZ_CARD_TYPE_FOUR_TWO_ONE or ECardType.DDZ_CARD_TYPE_BOMB or ECardType.DDZ_CARD_TYPE_ROCKET
+                    or ECardType.DDZ_CARD_TYPE_SOFTBOMB or ECardType.DDZ_CARD_TYPE_TIANBOMB) then
+                return false
+            end
+            if rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_BOMB or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_ROCKET
+                    or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_SOFTBOMB or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_TIANBOMB then
+                return true
+            end
+            if lparam.m_eCardType == rparam.m_eCardType then
+                if lparam.m_nLen ~= rparam.m_nLen then
+                    return false
+                else
+                    if lparam.m_keyMaxValue < rparam.m_keyMaxValue then
+                        return true
+                    else
+                        return false
+                    end
+                end
+            end
             return false
         end
     },
     -----14.四代两对
     [ECardType.DDZ_CARD_TYPE_FOUR_TWO_PAIR] = {
         isMatched = function(CardsObject)
-            return true, ECardType.DDZ_CARD_TYPE_FOUR_TWO_PAIR
+            if CardsObject.m_nLen ~= 8 then
+                return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
+            end
+            local mainValue = {}
+            local tempValue = {}
+            for i = 1,5 do
+                if (CardsObject.m_keyValue[i] == CardsObject.m_keyValue[i+1] and CardsObject.m_keyValue[i] == CardsObject.m_keyValue[i+2] 
+                    and CardsObject.m_keyValue[i] == CardsObject.m_keyValue[i+3]) then
+                    table.insert(mainValue,CardsObject.m_keyValue[i])
+                end
+            end
+            if #mainValue == 1 then
+                for i = 1, CardsObject.m_nLen do
+                    if mainValue[1] ~= CardsObject.m_keyValue[i] then table.insert(tempValue,CardsObject.m_keyValue[i]) end
+                end
+                for i = 1, #tempValue,2 do
+                    if tempValue[i] and tempValue[i+1] and tempValue[i] != tempValue[i+1] then
+                        return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
+                    end
+                end
+                CardsObject.m_keyMaxValue = mainValue[1]
+                return true, ECardType.DDZ_CARD_TYPE_FOUR_TWO_PAIR
+            elseif #mainValue == 2 then
+                CardsObject.m_keyMaxValue = (mainValue[1] > mainValue[2]) and mainValue[1] or mainValue[2]
+                return true, ECardType.DDZ_CARD_TYPE_FOUR_TWO_PAIR
+            end
+            return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
         end,
         isBigThan = function(lparam, rparam)
+            if lparam.m_eCardType ~= ECardType.DDZ_CARD_TYPE_FOUR_TWO_PAIR or
+                    rparam.m_eCardType ~= (ECardType.DDZ_CARD_TYPE_FOUR_TWO_PAIR or ECardType.DDZ_CARD_TYPE_BOMB or ECardType.DDZ_CARD_TYPE_ROCKET
+                    or ECardType.DDZ_CARD_TYPE_SOFTBOMB or ECardType.DDZ_CARD_TYPE_TIANBOMB) then
+                return false
+            end
+            if rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_BOMB or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_ROCKET
+                    or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_SOFTBOMB or rparam.m_eCardType == ECardType.DDZ_CARD_TYPE_TIANBOMB then
+                return true
+            end
+            if lparam.m_eCardType == rparam.m_eCardType then
+                if lparam.m_nLen ~= rparam.m_nLen then
+                    return false
+                else
+                    if lparam.m_keyMaxValue < rparam.m_keyMaxValue then
+                        return true
+                    else
+                        return false
+                    end
+                end
+            end
             return false
         end
     },
