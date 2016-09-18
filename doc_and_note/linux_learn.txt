@@ -1,0 +1,15 @@
+代码地址:https://github.com/Tachone/LinuxPorgDemo
+信号量,互斥锁,条件变量
+http://www.cnblogs.com/lonelycatcher/archive/2011/12/20/2294161.html
+
+http://coolshell.cn/articles/8239.html
+linux线程池的实现
+http://blog.csdn.net/nk_test/article/details/50835550
+
+跨平台移植
+http://www.ibm.com/developerworks/cn/linux/l-ipc2lin2.html
+c++11 六种memory order
+https://www.zhihu.com/question/24301047
+
+江南的博客 c++11改进设计模式
+http://www.cnblogs.com/qicosmos/p/3145019.html
