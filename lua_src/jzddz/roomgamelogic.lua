@@ -610,6 +610,85 @@ function CardHelper:GetCardsType(cardsObj)
 end
 
 
+local EActionType = {
+    ACTION_TYPE_JDZ = 1,
+    ACTION_TYPE_QDZ = 2,
+    ACTION_TYPE_NO_JDZ = 3,
+    ACTION_TYPE_NO_QDZ = 4,
+}
+
+math.randomseed(os.time)
+
+local action_seat_index = math.random(1,3)
+local tableobj = {
+    action_type = EActionType.ACTION_TYPE_JDZ,
+    jdz_begin = action_seat_index,
+
+    seats = {
+        [1] = {
+            isjdz = 0, --- -2 不抢,-1 不叫,0, 1 叫地主, 2抢地主
+        },
+        [2] = {
+            isjdz = 0,
+        },
+        [3] = {
+            isjdz = 0
+        },
+
+    }
+}  
+local action_seat_index_next = 0
+local action_seat_index_next_next = 0
+if action_seat_index == 1 then
+    action_seat_index_next = 2
+    action_seat_index_next_next = 3
+elseif action_seat_index == 2 then
+    action_seat_index_next = 3
+    action_seat_index_next_next = 1
+elseif action_seat_index == 3 then
+    action_seat_index_next = 1
+    action_seat_index_next_next = 2 
+end
+
+
+if tableobj.action_type == EActionType.ACTION_TYPE_JDZ then
+    ----尾家叫地主
+    if tableobj.jdz_begin == action_seat_index_next and tableobj.seats[action_seat_index].isjdz == 1 and 
+        tableobj.seats[action_seat_index_next].isjdz == 0 and tableobj.seats[action_seat_index_next_next] == 0 then
+        ----确定地主
+
+    else
+        -----通知下一家抢地主
+    end
+    
+
+elseif tableobj.action_type == EActionType.ACTION_TYPE_NO_JDZ then
+    ---尾家不叫地主
+    if tableobj.jdz_begin == action_seat_index_next and tableobj.seats[action_seat_index].isjdz == 0 and 
+        ((tableobj.seats[action_seat_index_next].isjdz == 1 and tableobj.seats[action_seat_index_next_next] == 0) or 
+            ((tableobj.seats[action_seat_index_next].isjdz == 0 and tableobj.seats[action_seat_index_next_next] == 1)) then
+        ----确定地主
+
+    else
+        -----通知下一家叫地主
+    end
+
+elseif tableobj.action_type == EActionType.ACTION_TYPE_QDZ then
+    ---判断下一家是否抢过,如果抢过则,强地主规则结束
+    if tableobj.seats[action_seat_index_next].isjdz == 2 then
+        ---确定地主
+    elseif tableobj.seats[action_seat_index_next].isjdz == 1 then
+
+    else
+        
+    end
+
+
+end
+
+
+
+
 
 
 
