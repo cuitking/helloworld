@@ -1,0 +1,19 @@
+Skynet 采用了几点设计，获得了比多进程方案更高的性能
+它约定，每个服务发送出去的包都是复制到用 malloc 分配出来的连续内存。接收方在处理完这个数据块（在处理的 callback 函数调用完毕）后，
+会默认调用 free 函数释放掉所占的内存。即，发送方申请内存，接收方释放。
+int skynet_send(struct skynet_context * context, uint32_t source, uint32_t destination,int type,int session,void * msg, 
+  size_t sz
+);
+
+typedef int (*skynet_cb)(struct skynet_context * context,void *ud, int type, int session, uint32_t source ,const void * msg,
+  size_t sz
+);
+暂且不去关注 type 和 session 两个参数。这里，source 和 destination 都是 32 位整数，表示地址。原则上不需要填写 source 地址，
+因为默认就是它自己。0 是系统保留的 handle ，可以指代自己。这里允许填写 source 值，是因为在某些特殊场合，需要伪造一个由别人发出的包。
+姑且可以理解 source 为 reply address 。
+
+发送一个数据包，就是发送 msg/sz 对。我们可以在 type 里打上 dontcopy 的 tag (PTYPE_TAG_DONTCOPY) ，让框架不要复制 msg/sz 指代的数据包。
+否则 skynet 会用 malloc 分配一块内存，把数据复制进去。callback 函数在处理完这块数据后，会调用 free 释放内存。你可以通过让 callback 
+返回 1 ，阻止框架释放内存。这通常和在 send 时标记 dontcopy 标记配对使用。
+
+
