@@ -73,6 +73,10 @@ function  Agent:init()
 	self.eventmng.add_eventbyname("GetGameRoomsReq", "getgamerooms")
 	self.eventmng.add_eventbyname("QuickStartReq", "quickstart")
 	self.eventmng.add_eventbyname("GameReadyReq", "gameready")
+	self.eventmng.add_eventbyname("PlayerGameRecordinfoReq","gamerecord")
+	self.eventmng.add_eventbyname("GetMailsReq","getmails")
+	self.eventmng.add_eventbyname("GetmailItemsReq","getmailsitem")
+	self.eventmng.add_eventbyname("DeleteMailReq","deletemail")
 
 	Agent.__tostring = agent_to_string						
 end

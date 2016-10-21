@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local filelog = require "filelog"
 local msghelper = require "logsvrmsghelper"
+local configdao = require "configdao"
 local filename = "logsvrcmd.lua"
 local Logsvrcmd = {}
 
@@ -15,7 +16,13 @@ end
 
 function Logsvrcmd.start(conf)
 	local server = msghelper:get_server()
-	msghelper:set_idle_logger_pool(conf)
+
+	local logscfg = configdao.get_common_conf("logscfg")
+
+	filelog.sys_error("+++++++++++++++++",logscfg)
+	msghelper:set_idle_logger_pool(logscfg)
+
+	msghelper:loadloggercfg(logscfg)
 
 	skynet.retpack(true)
 end

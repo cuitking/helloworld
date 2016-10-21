@@ -78,16 +78,26 @@ end
 
 function AgentNotice.updategameinfo(rid,iswin,isdz,num,reason)
 	local server = msghelper:get_server()
+	filelog.sys_error("----------updategameinfo---------",rid,iswin,isdz,num,
+		"+++++++++++++++++++",server.playgame)
 	if server.rid ~= rid then
+		return 
+	end
+	if not num or num < 0 then 
 		return 
 	end
 	server.playgame.totalgamenum = server.playgame.totalgamenum + num
 	if iswin == 1 then
-		
+		server.playgame.winnum = server.playgame.winnum + num
+		server.playgame.wininseriesnum = server.playgame.wininseriesnum + num
+		if server.playgame.wininseriesnum > server.playgame.highwininseries then
+			server.playgame.highwininseries = server.playgame.wininseriesnum
+		end
 	elseif iswin == 0 then
-
+		server.playgame.wininseriesnum = 0
 	end
-	
+
+	playerdatadao.save_player_playgame("update",rid,server.playgame)
 end
 
 
@@ -95,7 +105,6 @@ end
 function AgentNotice.updatecurrency(rid,currencyid,number,reason)
 	local server = msghelper:get_server()
 	filelog.sys_error("-----------改变货币in agent---------",rid,currencyid,number,reason)
-	filelog.sys_error("  ----------serverid-----------",server)
 	filelog.sys_error(" --------------server----money---",server.money)
 	filelog.sys_error(" --------------server----info-----", server.info)
 	if server.rid ~= rid then
@@ -116,6 +125,9 @@ function AgentNotice.updatecurrency(rid,currencyid,number,reason)
 		else
 			server.money.diamond = 0
 		end
+	end
+	if server.money.coin > server.playgame.maxcoinnum then
+		server.playgame.maxcoinnum = server.money.coin
 	end
 	playerdatadao.save_player_money("update",rid,server.money)
 end

@@ -12,7 +12,8 @@ playgame = {
 	totalgamenum = 0, ---总局数
     winnum = 0, ---胜场数
     wininseriesnum = 0, ---连胜记录
-    maxcoinnum = 0， ----最大金币数
+    maxcoinnum = 0, ----最大金币数
+    highwininseries = 0, ---最大连胜纪录
 }
 
 money = {
@@ -41,4 +42,13 @@ tablerecords = {
 	tablecreater_rid = 0,
 	rid = 0,
 	record = "",
+}
+
+
+mailinfos = {
+	mail_key = "",
+	rid = 0,
+	create_time = 0,
+	isattach = 0,
+	content = "",
 }

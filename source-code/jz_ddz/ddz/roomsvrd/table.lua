@@ -25,6 +25,7 @@ local Table = serverbase:new({
 		CardsHeaps = nil, 		---保存玩家出过的牌的牌堆
 		noputsCardsNum = 0,		---一个出牌回合里,没有出牌的玩家数,不出+1，出牌则置0
 		iswilldelete = 0, 		---在游戏中如果收到删除指令,则置1,游戏结束再处理
+		gamerecords = nil,		----记录战绩
 	}),
 
 	logicmng = require("logicmng")

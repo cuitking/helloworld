@@ -77,7 +77,7 @@ function ServerBase:send_resmsgto_client(fd, msgname, msg, ...)
 		return
 	end
 
-	filelog.sys_protomsg(msgname, skynet.self().."_notice", msghead, string.len(msghead), msgbody, string.len(msgbody), encodemsg, string.len(encodemsg))
+	--filelog.sys_protomsg(msgname, skynet.self().."_notice", msghead, string.len(msghead), msgbody, string.len(msgbody), encodemsg, string.len(encodemsg))
 
 	self:send_msgto_client(fd, encodemsg, ...)
 end
@@ -112,7 +112,7 @@ function ServerBase:send_noticemsgto_client(fd, msgname, msg, ...)
 		return
 	end
 
-	filelog.sys_protomsg(msgname, skynet.self().."_notice", msghead, string.len(msghead), msgbody, string.len(msgbody), encodemsg, string.len(encodemsg))	
+	--filelog.sys_protomsg(msgname, skynet.self().."_notice", msghead, string.len(msghead), msgbody, string.len(msgbody), encodemsg, string.len(encodemsg))	
 
 	self:send_msgto_client(fd, encodemsg, ...)
 end

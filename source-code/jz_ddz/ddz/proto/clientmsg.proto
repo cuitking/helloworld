@@ -40,7 +40,7 @@ message PlayerBaseinfo {
     optional int32  sex = 7;    //性别
 	optional int32	coins = 8;  //金币
 	optional int32  diamonds = 9; // 钻石
-	optional int32  wininseriesnum = 10; //连胜局数
+	optional int32  highwininseries = 10; //最大连胜局数
 	optional int32  maxcoinnum = 11; // 最大资产
 }
 
@@ -93,7 +93,7 @@ message TablePlayerInfo {
     optional int32  winnum = 6;   //胜场数
 	optional int32	coins = 7;  //金币
 	optional int32  diamonds = 8; // 钻石
-	optional int32  wininseriesnum = 9; //连胜局数
+	optional int32  highwininseries = 9; //最大连胜局数
 	optional int32  maxcoinnum = 10; // 最大资产
 }
 
@@ -545,5 +545,56 @@ message PlayerGameRecordinfo {
 message PlayerGameRecordinfoRes {
 	optional int32 errcode = 1; //错误原因 0表示成功
 	optional string errcodedes = 2; //错误描述
-	optional PlayerGameRecordinfo recordinfo = 3; // 
+	repeated PlayerGameRecordinfo records = 3; // 
 }
+
+//请求玩家的邮件信息
+message GetMailsReq {
+	optional Version version = 1;
+	optional int32 create_time = 2;
+}
+
+
+message MailItem {
+	optional string mail_key = 1;
+	optional int32 	rid = 2;
+	optional int32  create_time = 3;
+	optional string content = 4;
+	optional int32  isattach = 5;
+}
+
+//响应玩家的邮件信息
+message GetMailsRes {
+	optional int32 errcode = 1; //错误原因 0表示成功
+	optional string errcodedes = 2; // 错误描述 
+	repeated MailItem mailitems = 3; // 玩家邮件列表
+}
+
+//玩家请求领取邮件附件
+message GetmailItemsReq {
+	optional Version version = 1;
+	optional string mail_key = 2;
+}
+
+//响应玩家请求领取邮件附件
+message GetmailItemsRes {
+	optional int32 errcode = 1; //错误原因 0表示成功
+	optional string errcodedes = 2; // 错误描述 
+	optional string mail_key = 3; //
+	optional string resultdes = 4; // 得到物品的json串
+}
+
+// 玩家请求删除邮件
+message DeleteMailReq {
+	optional Version version = 1;
+	optional string mail_key = 2;
+}
+
+// 响应玩家请求删除邮件
+message DeleteMailRes {
+	optional int32 errcode = 1; //错误原因 0表示成功
+	optional string errcodedes = 2; // 错误描述 
+	optional string mail_key = 3; //
+}
+
+

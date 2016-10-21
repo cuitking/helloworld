@@ -73,9 +73,47 @@ local function get_redis_cmds(request)
 end
 
 function DatadbsvrDao.query(request)
-	local response = {issuccess = true}	
-	local status, data = redisdao.query_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+	local response = {issuccess = true}
+	local status, data
+	if request.choosedb == 1 then
+		status, data = redisdao.query_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+		response.isredisormysql = false
+		if not status then
+			filelog.sys_error("DatadbsvrDao.query redisdao.query_data failed", data)
+			response.issuccess = false
+			base.skynet_retpack(response)
+			return
+		end
 
+		response.data = data
+		base.skynet_retpack(response)	
+		return
+	end
+
+	if request.choosedb == 2 then
+		if type(request.mysqlcondition) == "table" then
+			status, data = mysqldao.select(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition)
+		else
+			status, data = mysqldao.query(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqlcondition)
+		end
+		response.isredisormysql = true
+		if not status then
+			filelog.sys_error("DatadbsvrDao.query mysqldao.select failed", data)
+			response.issuccess = false
+			base.skynet_retpack(response)
+			return			
+		end
+
+		if tabletool.is_emptytable(data) then
+			data = nil
+		end		
+		response.data = data
+		base.skynet_retpack(response)	
+		return
+	end
+
+
+	status, data = redisdao.query_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
 	response.isredisormysql = false
 	if not status then
 		filelog.sys_error("DatadbsvrDao.query redisdao.query_data failed", data)
@@ -84,7 +122,7 @@ function DatadbsvrDao.query(request)
 		return
 	end
 	if data == nil 
-		or (type(data) == "table" and tabletool.tabletool.is_emptytable(data)) then
+		or (type(data) == "table" and tabletool.is_emptytable(data)) then
 		--说明缓存中没有
 		if type(request.mysqlcondition) == "table" then
 			status, data = mysqldao.select(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition)
@@ -109,18 +147,56 @@ function DatadbsvrDao.query(request)
 end
 
 function DatadbsvrDao.update(request)
-	redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
-	mysqldao.update(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+	if request.choosedb == 1 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+		return
+	end
+
+	if request.choosedb == 2 then
+		mysqldao.update(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		return
+	end
+
+	if request.choosedb == 3 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+		mysqldao.update(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		return
+	end
 end
 
 function DatadbsvrDao.delete(request)
-	redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
-	mysqldao.delete(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition)
+	if request.choosedb == 1 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+		return
+	end
+
+	if request.choosedb == 2 then
+		mysqldao.delete(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition)
+		return
+	end
+
+	if request.choosedb == 3 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+		mysqldao.delete(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition)
+	end
 end
 
 function DatadbsvrDao.insert(request)
-	redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))	
-	mysqldao.insert(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+	if request.choosedb == 1 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))	
+		return
+	end
+	
+	if request.choosedb == 2 then
+		mysqldao.insert(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		return
+	end
+
+	if request.choosedb == 3 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))			
+		mysqldao.insert(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		return
+	end
 end
 
 return DatadbsvrDao

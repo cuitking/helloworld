@@ -28,9 +28,9 @@ end
 --用于copy玩家的基本信息
 function AgentHelper:copy_base_info(baseinfo, info, playgame, money)
 	baseinfo.rid = info.rid
-	if info.rolename == "_guest" then
-		info.rolename = "游客"..tostring(info.rid%10000)
-	end
+	-- if info.rolename == "_guest" then
+	-- 	info.rolename = "游客"..tostring(info.rid%10000)
+	-- end
 	baseinfo.rolename = info.rolename
     baseinfo.logo = info.logo
     baseinfo.phone = info.phone
@@ -39,7 +39,7 @@ function AgentHelper:copy_base_info(baseinfo, info, playgame, money)
     baseinfo.sex = info.sex
 	baseinfo.coins = money.coin
 	baseinfo.diamonds = money.diamond
-	baseinfo.wininseriesnum = playgame.wininseriesnum
+	baseinfo.highwininseries = playgame.highwininseries
 	baseinfo.maxcoinnum = playgame.maxcoinnum
 end
 

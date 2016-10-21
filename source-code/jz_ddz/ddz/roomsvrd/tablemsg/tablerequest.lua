@@ -178,19 +178,18 @@ function TableRequest.leavetable(request)
 		base.skynet_retpack(responsemsg)		
 		return
 	end
-	----如果玩家在游戏中,不能让他能够退出房间
-	if not roomtablelogic.is_onegameend(table_data) then
-		responsemsg.errcode = EErrCode.ERR_PLAYER_IN_GAME
-		responsemsg.errcodedes = "房间正在游戏中,不能退出！"
-		base.skynet_retpack(responsemsg)
-		return
-	end
-
 	seat = roomtablelogic.get_seat_by_rid(table_data, request.rid)
 
 	if seat == nil then
 		roomtablelogic.leavetable(table_data, request, seat)
 		base.skynet_retpack(responsemsg)		
+		return
+	end
+	----如果玩家在游戏中,不能让他能够退出房间
+	if not roomtablelogic.is_onegameend(table_data) then
+		responsemsg.errcode = EErrCode.ERR_PLAYER_IN_GAME
+		responsemsg.errcodedes = "房间正在游戏中,不能退出！"
+		base.skynet_retpack(responsemsg)
 		return
 	end
 
@@ -235,8 +234,13 @@ function TableRequest.sitdowntable(request)
 		seat.playerinfo.rolename=request.playerinfo.rolename
 		seat.playerinfo.logo=request.playerinfo.logo
 		seat.playerinfo.sex=request.playerinfo.sex
-		
-		
+		seat.playerinfo.totalgamenum = request.playerinfo.totalgamenum
+		seat.playerinfo.winnum = request.playerinfo.winnum
+		seat.playerinfo.highwininseries = request.playerinfo.highwininseries
+		seat.playerinfo.maxcoinnum = request.playerinfo.maxcoinnum
+		seat.playerinfo.coins = request.playerinfo.coin
+		seat.playerinfo.diamonds = request.playerinfo.diamonds
+
 		base.skynet_retpack(responsemsg, seatinfo)
 		return
 	else

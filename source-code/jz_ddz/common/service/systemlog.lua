@@ -1,13 +1,13 @@
 local skynet = require "skynet"
 local tabletool = require "tabletool"
 local timetool = require "timetool"
+local base = require "base"
 require "skynet.manager"
 local CMD = {}
 
 
 
 local function get_file_name(dirname, filename)
-
      ----- 日志分日期存储------
     local path = skynet.getenv("logpath")
     if path == nil then
@@ -20,7 +20,9 @@ local function get_file_name(dirname, filename)
     local current_time = os.date("%Y_%m_%d", timetool.get_time())
     local log_path = path.."/"..current_time.."/"..dirname
     local current_file_name = log_path.."/"..filename
-    os.execute("mkdir -p "..log_path)
+    if not base.is_file_exist(log_path) then
+        os.execute("mkdir -p "..log_path)
+    end
     return current_file_name
 end
 

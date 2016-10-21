@@ -7,6 +7,7 @@ local timetool = require "timetool"
 local gamelog = require "gamelog"
 local processstate = require "processstate"
 local playerdatadao = require "playerdatadao"
+local base = require "base"
 local table = table
 require "enum"
 local processing = processstate:new({timeout = 5})
@@ -85,6 +86,17 @@ function  EnterGame.process(session, source, fd, request)
    	end
    	local status
    	status, server.info = playerdatadao.query_player_info(request.rid)
+   	----新注册玩家发一封邮件
+   	---if status == true then
+   		local mailconf = configdao.get_business_conf(100, 1000, "mailcfg")
+   		local newplayermail = tabletool.deepcopy(mailconf.newplayermail)
+   		---填充
+   		newplayermail.mail_key = base.generate_uuid()
+   		newplayermail.rid = request.rid
+   		newplayermail.create_time = timetool.get_time()
+   		filelog.sys_error("---------insert--newplayermail------",newplayermail)
+   		playerdatadao.save_player_mail("insert",request.rid,newplayermail,nil)
+   	---end
 	status, server.playgame = playerdatadao.query_player_playgame(request.rid)
 	status, server.online = playerdatadao.query_player_online(request.rid)
 	status, server.money = playerdatadao.query_player_money(request.rid)
@@ -145,6 +157,7 @@ function  EnterGame.process(session, source, fd, request)
 	if server.money.coin > server.playgame.maxcoinnum then
 		server.playgame.maxcoinnum = server.money.coin
 	end
+
 	msghelper:copy_base_info(responsemsg.baseinfo, server.info, server.playgame, server.money)
 
 	--保存玩家在线状态
@@ -157,6 +170,7 @@ function  EnterGame.process(session, source, fd, request)
 	server.online.gatesvr_service_address = skynet.self()
 
 	playerdatadao.save_player_online("update", request.rid, server.online)
+
 	msghelper:send_resmsgto_client(fd, "EnterGameRes", responsemsg)
 end
 

@@ -9,7 +9,7 @@ local filename = "agentcmd.lua"
 local AgentCMD = {}
 
 function AgentCMD.process(session, source, event, ...)
-	local f = AgentCMD[event] 
+	local f = AgentCMD[event]
 	if f == nil then
 		filelog.sys_error(filename.." AgentCMD.process invalid event:"..event)
 		return nil

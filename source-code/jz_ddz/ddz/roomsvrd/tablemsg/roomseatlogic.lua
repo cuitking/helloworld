@@ -36,12 +36,12 @@ function RoomSeatLogic.dealcards(seatobj)
 	if noticemsg.cards == nil then
 		noticemsg.cards = tabletool.deepcopy(seatobj.cards)
 	end
-	filelog.sys_error("--------------fapai----------------------",seatobj.cards)
+	---filelog.sys_error("--------------fapai----------------------",seatobj.cards)
 	msghelper:sendmsg_to_tableplayer(seatobj,"DealCardsNtc",noticemsg)
 end
 
 function RoomSeatLogic.setSeatstate(gameobj)
-	filelog.sys_error("---------change------------------",gameobj.action_type)
+	---filelog.sys_error("---------change------------------",gameobj.action_type)
 	if gameobj.action_type == EActionType.ACTION_TYPE_CHUPAI then
 		gameobj.seats[gameobj.action_seat_index].state = ESeatState.SEAT_STATE_CHUPAI
 	elseif gameobj.action_type == EActionType.ACTION_TYPE_FOLLOW_CHUPAI then
@@ -57,7 +57,7 @@ function RoomSeatLogic.setSeatstate(gameobj)
 	elseif gameobj.action_type == EActionType.ACTION_TYPE_BUQIANGDIZHU then
 		gameobj.seats[gameobj.action_seat_index].state = ESeatState.SEAT_STATE_NOT_QIANGDZ
 	end
-	filelog.sys_error("---------change------------------",gameobj.action_type,gameobj.action_seat_index,gameobj.seats[gameobj.action_seat_index].state,"?????????????????")
+	---filelog.sys_error("---------change------------------",gameobj.action_type,gameobj.action_seat_index,gameobj.seats[gameobj.action_seat_index].state,"?????????????????")
 end
 
 function RoomSeatLogic.resetstate(seatobj)
@@ -97,7 +97,12 @@ function RoomSeatLogic.clear_seat(seat)
 	seat.agent_address = -1
 	seat.playerinfo.rolename = ""
 	seat.playerinfo.logo=""
-	seat.playerinfo.sex=0
+	seat.playerinfo.sex = 0
+    seat.playerinfo.winnum = 0
+    seat.playerinfo.coins = 0
+    seat.playerinfo.diamonds = 0
+    seat.playerinfo.highwininseries = 0
+    seat.playerinfo.maxcoinnum = 0
 	seat.is_tuoguan = EBOOL.FALSE
 	seat.is_robot = false
 	seat.timeout_count = 0
@@ -124,7 +129,7 @@ function RoomSeatLogic.dealtuoguan(gameobj,seat)
 		}
 		msghelper:sendmsg_to_alltableplayer("DoactionResultNtc", noticemsg)
 		----如果已经注册玩家操作超时定时器,则取消
-		filelog.sys_error("----tuoguan-------gameobj.action_seat_index",gameobj.action_seat_index,gameobj.action_type,gameobj.action_to_time,seat.index)
+		---filelog.sys_error("----tuoguan-------gameobj.action_seat_index",gameobj.action_seat_index,gameobj.action_type,gameobj.action_to_time,seat.index)
 		if gameobj.action_seat_index == seat.index then
 			if gameobj.timer_id > 0 then
 				timer.cleartimer(gameobj.timer_id)
@@ -137,7 +142,7 @@ function RoomSeatLogic.dealtuoguan(gameobj,seat)
 				action_to_time = gameobj.action_to_time,
 			}
 			local lefttime = gameobj.action_to_time - timetool.get_time()
-			filelog.sys_error("---------------处理定时器-----------",lefttime)
+			---filelog.sys_error("---------------处理定时器-----------",lefttime)
 			if lefttime <= ETuoguanDelayTime.TUOGUAN_DELAY_TIME and lefttime > 0 then
 				gameobj.timer_id = timer.settimer(lefttime*100, "doaction", doactionntcmsg)
 			else
@@ -159,7 +164,7 @@ function RoomSeatLogic.canceltuoguan(gameobj,seat)
 		}
 		msghelper:sendmsg_to_alltableplayer("DoactionResultNtc", noticemsg)
 		----如果已经注册玩家操作超时定时器,则取消
-		filelog.sys_error("----quxiaotuoguan-------gameobj.action_seat_index",gameobj.action_seat_index,gameobj.action_type,gameobj.action_to_time,seat.index)
+		---filelog.sys_error("----quxiaotuoguan-------gameobj.action_seat_index",gameobj.action_seat_index,gameobj.action_type,gameobj.action_to_time,seat.index)
 		if gameobj.action_seat_index == seat.index then
 			if gameobj.timer_id > 0 then
 				timer.cleartimer(gameobj.timer_id)
@@ -172,7 +177,7 @@ function RoomSeatLogic.canceltuoguan(gameobj,seat)
 				action_to_time = gameobj.action_to_time,
 			}
 			local lefttime = gameobj.action_to_time - timetool.get_time()
-			filelog.sys_error("---------------quxiaotuoguan处理定时器-----------",lefttime)
+			---filelog.sys_error("---------------quxiaotuoguan处理定时器-----------",lefttime)
 			if lefttime > 0 then
 				gameobj.timer_id = timer.settimer(lefttime*100, "doaction", doactionntcmsg)
 			end
@@ -181,10 +186,9 @@ function RoomSeatLogic.canceltuoguan(gameobj,seat)
 end
 
 function RoomSeatLogic.balancegame(seat,getvalue)
-
-	msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, "updategameinfo",seat.rid,seat.win,seat.isdz,1,reason)
 	msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, "updatecurrency",
 		seat.rid,ECurrencyType.CURRENCY_TYPE_COIN,getvalue,EReasonChangeCurrency.CHANGE_CURRENCY_NORMAL_GAME)
+	msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, "updategameinfo",seat.rid,seat.win,seat.isdz,1,reason)
 end
 
 function RoomSeatLogic.onegamestart_initseat(seat)

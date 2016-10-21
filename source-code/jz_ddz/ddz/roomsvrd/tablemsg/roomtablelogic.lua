@@ -6,6 +6,7 @@ local timer = require "timer"
 local filelog = require "filelog"
 local msgproxy = require "msgproxy"
 local base = require "base"
+local playerdatadao = require "playerdatadao"
 require "enum"
 local RoomTableLogic = {}
 
@@ -57,6 +58,9 @@ function RoomTableLogic.init(tableobj, conf, roomsvr_id)
 	tableobj.gamelogic = game:new()
 	roomgamelogic.init(tableobj.gamelogic, tableobj)
 
+	----初始化桌子战绩记录
+	RoomTableLogic.initGamerecords(tableobj)
+
 	if conf.retain_time ~= nil and conf.retain_time > 0 then
 		if tableobj.delete_table_timer_id > 0 then
 			timer.cleartimer(tableobj.delete_table_timer_id)
@@ -92,6 +96,7 @@ function RoomTableLogic.clear(tableobj)
 	for k,v in pairs(tableobj) do
 		tableobj[k] = nil
 	end
+	tableobj.gamerecords = nil
 end
 
 --[[
@@ -204,7 +209,7 @@ function RoomTableLogic.sitdowntable(tableobj, request, seat)
 	seat.playerinfo.sex=request.playerinfo.sex
 	seat.playerinfo.totalgamenum = request.playerinfo.totalgamenum
 	seat.playerinfo.winnum = request.playerinfo.winnum
-	seat.playerinfo.wininseriesnum = request.playerinfo.wininseriesnum
+	seat.playerinfo.highwininseries = request.playerinfo.highwininseries
 	seat.playerinfo.maxcoinnum = request.playerinfo.maxcoinnum
 	seat.playerinfo.coins = request.playerinfo.coins
 	seat.playerinfo.diamonds = request.playerinfo.diamonds
@@ -503,6 +508,30 @@ function RoomTableLogic.balancegame(tableobj)
 			value.coin = 0
 		end
 		roomseatlogic.balancegame(value,getvalue)
+		if tableobj.conf.room_type==ERoomType.ROOM_TYPE_FRIEND_COMMON then
+			if tableobj.gamerecords == nil then RoomTableLogic.initGamerecords(tableobj) end
+			local onerecordmsg = {}
+			onerecordmsg.rid = value.rid
+			onerecordmsg.currencyid = ECurrencyType.CURRENCY_TYPE_COIN
+			onerecordmsg.balancenum = getvalue
+			onerecordmsg.rolename = value.playerinfo.rolename
+			local hasplayerkey = 0
+			for k,v in ipairs(tableobj.gamerecords) do
+				if v.rid == value.rid then
+					hasplayerkey = k
+					break
+				end
+			end
+			if hasplayerkey == 0 then
+				table.insert(tableobj.gamerecords,onerecordmsg)
+			elseif hasplayerkey > 0 then
+				local playerrecord = tableobj.gamerecords[hasplayerkey]
+				if playerrecord then
+					playerrecord.balancenum = playerrecord.balancenum + getvalue
+					playerrecord.rolename = value.playerinfo.rolename
+				end
+			end
+		end
 		---roomseatlogic.changeCurrency(value,ECurrencyType.CURRENCY_TYPE_COIN,getvalue,EReasonChangeCurrency.CHANGE_CURRENCY_NORMAL_GAME)
 	end
 end
@@ -576,6 +605,7 @@ function RoomTableLogic.resetTable(tableobj)
 --			roomtablelogic.passive_standuptable(tableobj, nil, v, EStandupReason.STANDUP_REASON_READYTIMEOUT_STANDUP)
 --		end
 --	end
+	---RoomTableLogic.saveGamerecords(tableobj)
 end
 
 function RoomTableLogic.isQiangdz(tableobj)
@@ -613,6 +643,7 @@ function RoomTableLogic.noonejdz(tableobj)
 			v.cards = {}
 		end
 	end
+	tableobj.nojdznums = tableobj.nojdznums + 1
 	tableobj.noputsCardsNum = 0
 	tableobj.state = ETableState.TABLE_STATE_WAIT_START_COUNT_DOWN
 	local roomgamelogic = msghelper:get_game_logic()
@@ -628,6 +659,40 @@ function RoomTableLogic.setallseatstate(tableobj, state)
     end
 end
 
+----初始化牌桌战绩记录
+function RoomTableLogic.initGamerecords(tableobj)
+	-- body
+	if tableobj.conf.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON and tableobj.gamerecords == nil then
+		tableobj.gamerecords = {}
+	end
+end
 
+function RoomTableLogic.saveGamerecords(tableobj)
+	-- body
+	filelog.sys_error("-------------saveGamerecords------------------",tableobj.conf.room_type,"++++++++++++",
+		tableobj.gamerecords)
+	if tableobj.conf.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON then
+		if tableobj.gamerecords and type(tableobj.gamerecords) == "table" then
+			for k,value in ipairs(tableobj.gamerecords) do
+				local tablerecords = {}
+				tablerecords.table_create_time = tableobj.conf.create_user_rid
+				tablerecords.id = ""..tostring(tableobj.id)..tostring(tableobj.conf.create_user_rid)..tostring(value.rid)..tostring(timetool.get_time())
+				tablerecords.table_id = tableobj.id
+				tablerecords.table_create_time = tableobj.conf.create_time
+				tablerecords.tablecreater_rid = tableobj.conf.create_user_rid
+				tablerecords.rid = value.rid
+				tablerecords.record = tabletool.deepcopy(tableobj.gamerecords)
+				---msgproxy.sendrpc_noticemsgto_gatesvrd()
+				filelog.sys_error("-------------saveGamerecords------------------",tablerecords)
+				playerdatadao.save_player_tablerecords("insert",value.rid,tablerecords)
+			end
+		end
+	end
+end
+
+function RoomTableLogic.insertGamerecords()
+	-- body
+
+end
 
 return RoomTableLogic

@@ -7,7 +7,9 @@ skynet.start(function()
 	print("Server start")
 	skynet.uniqueservice("msgprotoloader")
 	skynet.newservice("systemlog")
-	skynet.newservice("confcenter")
+    local confcentersvr = skynet.newservice("confcenter")
+    skynet.call(confcentersvr, "lua", "start")
+    print("confcenter start success")
 
     local gmsvrs = configdao.get_svrs("gmsvrs")
     if gmsvrs == nil then

@@ -6,7 +6,9 @@ skynet.start(function()
 	print("Server start")
 	local console = skynet.newservice("console")
 	skynet.newservice("systemlog")
-	skynet.newservice("confcenter")
+    local confcentersvr = skynet.newservice("confcenter")
+    skynet.call(confcentersvr, "lua", "start")
+    print("confcenter start success")
 
     local httpsvrs = configdao.get_svrs("httpsvrs")
     if httpsvrs == nil then

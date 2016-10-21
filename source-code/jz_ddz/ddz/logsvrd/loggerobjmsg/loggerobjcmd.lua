@@ -8,6 +8,7 @@
 local skynet = require "skynet"
 local filelog = require "filelog"
 local msghelper = require "loggerobjhelper"
+local base = require "base"
 local filename = "loggerobjcmd.lua"
 local LoggerobjCmd = {}
 
@@ -18,6 +19,12 @@ function LoggerobjCmd.process(session, source, event, ...)
         return nil
     end
     f(...)
+end
+
+function LoggerobjCmd.start(conf,svr_id)
+	filelog.sys_error("-----------LoggerobjCmd.start-------------",conf,svr_id)
+
+	base.skynet_retpack(true)
 end
 
 

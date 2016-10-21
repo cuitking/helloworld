@@ -158,11 +158,11 @@ function TablesvrHelper:copy_tableplayerinfo(tableplayerinfo, seat)
     tableplayerinfo.rolename = seat.playerinfo.rolename
     tableplayerinfo.logo = seat.playerinfo.logo
     tableplayerinfo.sex = seat.playerinfo.sex
-    tableplayerinfo.totalgamenum  = seat.playerinfo.sex
+    tableplayerinfo.totalgamenum  = seat.playerinfo.totalgamenum
     tableplayerinfo.winnum = seat.playerinfo.winnum
     tableplayerinfo.coins = seat.playerinfo.coins
     tableplayerinfo.diamonds = seat.playerinfo.diamonds
-    tableplayerinfo.wininseriesnum = seat.playerinfo.wininseriesnum
+    tableplayerinfo.highwininseries = seat.playerinfo.highwininseries
     tableplayerinfo.maxcoinnum = seat.playerinfo.maxcoinnum
 end
 

@@ -195,7 +195,6 @@ function RoomGameLogic.continue(gameobj)
 		tableobj.action_type == EActionType.ACTION_TYPE_CHECK then
 		if tableobj.action_type ~= EActionType.ACTION_TYPE_CHECK and #tableobj.CardsHeaps > 0 then
 			local roundheaps = tableobj.CardsHeaps[#tableobj.CardsHeaps]
-			filelog.sys_error("----------roundheaps---------",roundheaps,"---------------",tableobj.CardsHeaps)
 			for k,v in ipairs(roundheaps[#roundheaps].cardHelper) do
 				table.insert(noticemsg.cards,v)
 			end
@@ -207,7 +206,6 @@ function RoomGameLogic.continue(gameobj)
 
 	roomseatlogic.setSeatstate(tableobj)
 	-- TO ADD操作类型
-	filelog.sys_error("   ----------------DoactionResultNtc------------",noticemsg)
 	msghelper:sendmsg_to_alltableplayer("DoactionResultNtc", noticemsg)
 
 	local is_end_game = false
@@ -345,19 +343,7 @@ function RoomGameLogic.continue(gameobj)
 		filelog.sys_error(" -------不叫地主的玩家数---------",tableobj.noputsCardsNum)
 		if tableobj.noputsCardsNum >= 3 then
 			----玩家都不叫地主，重新发牌
-			filelog.sys_error("-------------------玩家都不叫地主，重新发牌---------------",tableobj.noputsCardsNum)
-			tableobj.initCards = nil
-			for k,v in ipairs(tableobj.seats) do
-				if type(v.cards) == "table" and #v.cards > 0 then
-					v.state = ESeatState.SEAT_STATE_WAIT_START
-					v.jdztag = 0
-					v.cards = {}
-				end
-			end
-			tableobj.noputsCardsNum = 0
-			tableobj.state = ETableState.TABLE_STATE_WAIT_START_COUNT_DOWN
-			local roomgamelogic = msghelper:get_game_logic()
-			roomgamelogic.run(tableobj.gamelogic)
+			roomtablelogic.noonejdz(tableobj)
 			return
 		end
 	elseif tableobj.state == ETableState.TABLE_STATE_ONE_GAME_START then
@@ -494,6 +480,8 @@ function RoomGameLogic.onegamerealend(gameobj)
 		end
 	end
 	tableobj.state = ETableState.TABLE_STATE_WAIT_ALL_READY
+	-- local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
+	-- roomtablelogic.saveGamerecords(tableobj)
 end
 
 function RoomGameLogic.gameend(gameobj)
@@ -535,7 +523,8 @@ function RoomGameLogic.onegamestart_inittable(gameobj)
 	if tableobj.timer_id >= 0 then
 		timer.cleartimer(tableobj.timer_id)
 		tableobj.timer_id = -1
-	end	
+	end
+
 end
 
 function RoomGameLogic.standup_clear_seat(gameobj, seat)

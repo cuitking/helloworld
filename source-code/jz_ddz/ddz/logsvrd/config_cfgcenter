@@ -1,1 +1,15 @@
 ---------------------------------------------------
+
+logrootpath ="../../../logs"
+logscfg = {
+	moneylogcfg = {
+		moneylogpath = logrootpath .. "/money",
+		splitfilesize = 4096,
+	},
+	
+	recordlogcfg = {
+		recordlogpath = logrootpath .. "/record",
+		splitfilesize = 4096,
+	},
+}
+

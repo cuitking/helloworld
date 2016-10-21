@@ -81,7 +81,7 @@ function  SitdownTable.process(session, source, fd, request)
 		sex = server.info.sex,
 		totalgamenum = server.playgame.totalgamenum,
 		winnum = server.playgame.winnum,
-		wininseriesnum = server.playgame.wininseriesnum,
+		highwininseries = server.playgame.highwininseries,
 		maxcoinnum = server.playgame.maxcoinnum,
 		coins = server.money.coin,
 		diamonds = server.money.diamonds,

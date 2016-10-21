@@ -78,7 +78,7 @@ function TableCMD.delete(...)
 	msgproxy.sendrpc_broadcastmsgto_tablesvrd("delete", table_data.svr_id , table_data.id)
 	
 	--检查桌子当前是否能够删除
-
+	filelog.sys_error("------------table  delete ------------")
 	if table_data.delete_table_timer_id > 0 then
 		timer.cleartimer(table_data.delete_table_timer_id)
 		table_data.delete_table_timer_id = -1
@@ -97,6 +97,8 @@ function TableCMD.delete(...)
 	--踢出座位上的玩家
 	roomtablelogic.standupallplayer(table_data)
 
+	---纪录牌桌战绩数据
+	roomtablelogic.saveGamerecords(table_data)
 	--通知roomsvrd删除table
 	skynet.send(table_data.svr_id, "lua", "cmd", "delete_table", table_data.id)
 		

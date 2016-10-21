@@ -5,7 +5,9 @@ local configdao = require "configdao"
 skynet.start(function()
 	print("Server start")
 	skynet.newservice("systemlog")
-	skynet.newservice("confcenter")
+    local confcentersvr = skynet.newservice("confcenter")
+    skynet.call(confcentersvr, "lua", "start")
+    print("confcenter start success")
 
     local proxys = configdao.get_svrs("proxys")
     if proxys ~= nil then

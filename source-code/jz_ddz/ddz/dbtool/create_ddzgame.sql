@@ -25,8 +25,9 @@ create table if not exists role_playgame(
                                             rid int(11) NOT NULL DEFAULT '0' comment '角色id',
                                             totalgamenum int(11) NOT NULL DEFAULT '0' comment '总局数',
                                             winnum int(11) NOT NULL DEFAULT '0' comment '胜局', 
-                                            wininseriesnum int(11) NOT NULL DEFAULT '0' comment '最大连胜局数',
+                                            wininseriesnum int(11) NOT NULL DEFAULT '0' comment '当前连胜局数',
                                             maxcoinnum bigint unsigned not null DEFAULT '0' comment '最大金币数',
+                                            highwininseries int(11) NOT NULL DEFAULT '0' comment '最大连胜局数',
                                             update_time timestamp on update current_timestamp default current_timestamp,
                                             primary key(rid) 
                                         )engine = InnoDB, charset = utf8;
@@ -66,3 +67,15 @@ create table if not exists role_tablerecords(
                                             update_time timestamp on update current_timestamp default current_timestamp,
                                             primary key(id) 
                                         )engine = InnoDB, charset = utf8;
+
+
+#统邮件表 insert delete
+create table if not exists role_mailinfos(
+                                            mail_key varchar(30) not null default "" comment '邮件key',
+                                            rid int(11) not null comment '角色id',
+                                            create_time int(11) not null DEFAULT '0' comment '创建时间',
+                                            isattach int(11) not NULL DEFAULT '0' comment '是否有附件',
+                                            content varchar(1024) not null DEFAULT '' comment '邮件内容json格式',
+                                            update_time timestamp on update current_timestamp default current_timestamp,
+                                            primary key(mail_key)
+                                        ) engine = InnoDB, charset = utf8;

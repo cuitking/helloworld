@@ -3,7 +3,7 @@ local configmng = require "configmng"
 local filelog = require "filelog"
 local sharedata = require "sharedata"
 local configtool = require "configtool"
-
+local base = require "base"
 require "skynet.manager"
 local filename = "confcenter.lua"
 local sharedataname = "cfgmng"
@@ -69,8 +69,8 @@ function CMD.set(key, value)
 	if key == nil or value == nil then
 		return
 	end
-
-	if sharedata.query(key) == nil then
+	local status, _ = pcall(sharedata.query, key)
+	if not status then
 		sharedata.new(key, value)
 	else
 		sharedata.update(key, value)
@@ -91,6 +91,7 @@ end
 
 function CMD.start(...)
 	CMD.init(...)
+	base.skynet_retpack(true)
 end
 
 skynet.dispatch("lua", function(_, address,  cmd, ...)
@@ -103,6 +104,5 @@ skynet.dispatch("lua", function(_, address,  cmd, ...)
 end)
 
 skynet.start(function()
-	CMD.start()
     skynet.register ".confcenter"
 end)

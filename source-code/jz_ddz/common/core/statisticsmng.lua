@@ -5,9 +5,11 @@ local skynet = require "skynet"
 local filelog = require "filelog"
 local profile = require "profile"
 local timetool = require "timetool"
-
+local svrid = ".statistics"
 local stat_mqlen_lasttime = timetool.get_time()
 local stat_msg_lasttime = timetool.get_time()
+local stat_func_lasttime = timetool.get_time()
+
 local funcstat = {}
 local mqlenstat = {}
 local msgstat = {}
@@ -30,7 +32,14 @@ function StatisticsMng.stat_func_end(funcname)
 		return
 	end
 	funcstat[funcname].time = funcstat[funcname].time + profile.stop()
-	funcstat[funcname].n = funcstat[funcname].n + 1	
+	funcstat[funcname].n = funcstat[funcname].n + 1
+	local now_time = timetool.get_time()
+	if stat_func_lasttime + 180 >= now_time then
+		stat_func_lasttime = now_time
+		skynet.send(svrid, "lua", "func", funcstat)
+		funcstat = nil
+		funcstat = {}
+	end	
 end
 
 --统计消息的处理时间包括阻塞调用时间(单位10ms)
@@ -54,12 +63,16 @@ function StatisticsMng.stat_msg_end(msgname)
 	end
 	local msgstatitem = msgstat[msgname]
 	local now_time = timetool.get_time()
+	local dealtime = now_time - msgstatitem.begintime
 	msgstatitem.n = msgstatitem.n + 1
-	msgstatitem.time = msgstatitem.time + now_time - msgstatitem.begintime
-	msgstatitem.begintime = nil
-	if stat_msg_lasttime + 300 >= now_time then
-		filelog.sys_obj("statitics", "msgstat", msgstat)
+	if msgstatitem.maxtime < dealtime then
+		msgstatitem.maxtime = dealtime
+	end
+	msgstatitem.time = msgstatitem.time + dealtime
+	if stat_msg_lasttime + 180 >= now_time then
 		stat_msg_lasttime = now_time
+		skynet.send(svrid, "lua", "msg", msgstat)
+		msgstat = nil
 		msgstat = {}
 	end
 end
@@ -67,7 +80,8 @@ end
 --每20s采样一次当前服务的消息队列长度,当样本超过15时将重置
 function StatisticsMng.stat_service_mqlen(servicename)
 	if #mqlenstat >= 15 then
-		filelog.sys_obj("statitics", servicename, "----funcstat----", funcstat, "----mqlenstat----", mqlenstat)
+		skynet.send(svrid, "lua", "mqlen", mqlenstat)
+		mqlenstat = nil
 		mqlenstat = {}
 	end
 

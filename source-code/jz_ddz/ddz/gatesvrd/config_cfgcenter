@@ -10,6 +10,9 @@ common={
 		playerdbinit = {
 			file="../config/business/playerdbinitdatacfg",
 		},
+		mailcfg = {
+			file="../config/business/mailcfg",
+		},
 	}
 }
 
