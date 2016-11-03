@@ -199,4 +199,80 @@ function DatadbsvrDao.insert(request)
 	end
 end
 
+function DatadbsvrDao.insert(request)
+	if request.choosedb == 1 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))	
+		return
+	end
+	
+	if request.choosedb == 2 then
+		mysqldao.insert(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		return
+	end
+
+	if request.choosedb == 3 then
+		redisdao.save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))			
+		mysqldao.insert(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		return
+	end
+end
+
+function DatadbsvrDao.sync_insert(request)
+	local response = {issuccess = true}
+	local status, data
+	if request.choosedb == 1 then
+		status, data = redisdao.sync_save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+		response.isredisormysql = false
+		if not status then
+			filelog.sys_error("DatadbsvrDao.sync_insert redisdao.sync_save_data failed", data)
+			response.issuccess = false
+			base.skynet_retpack(response)
+			return
+		end
+
+		response.data = data
+		base.skynet_retpack(response)	
+		return
+	end
+	
+	if request.choosedb == 2 then
+		response.isredisormysql = true
+		status, data = mysqldao.sync_insert(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		if not status then
+			filelog.sys_error("DatadbsvrDao.sync_insert mysqldao.sync_insert failed", data)
+			response.issuccess = false
+			base.skynet_retpack(response)
+			return
+		end
+
+		response.data = data
+		base.skynet_retpack(response)	
+		return
+	end
+
+	if request.choosedb == 3 then
+		status, data = redisdao.sync_save_data(msghelper:get_redissvrid_byrid(request.rid), get_redis_cmds(request))
+		response.isredisormysql = false
+		if not status then
+			filelog.sys_error("DatadbsvrDao.sync_insert redisdao.sync_save_data failed", data)
+			response.issuccess = false
+			base.skynet_retpack(response)
+			return
+		end
+
+		status, data = mysqldao.sync_insert(msghelper:get_mysqlsvrid_byrid(request.rid), request.mysqltable, request.mysqlcondition, request.mysqldata)
+		response.isredisormysql = true
+		if not status then
+			filelog.sys_error("DatadbsvrDao.sync_insert mysqldao.sync_insert failed", data)
+			response.issuccess = false
+			base.skynet_retpack(response)
+			return
+		end
+		response.data = data
+		base.skynet_retpack(status, data)
+		return
+	end
+end
+
+
 return DatadbsvrDao

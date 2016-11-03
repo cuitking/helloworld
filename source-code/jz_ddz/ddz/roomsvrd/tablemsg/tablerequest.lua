@@ -83,6 +83,13 @@ function TableRequest.entertable(request)
 		return
 	end
 
+	if table_data.conf.max_watch_playernum ~= nil 
+		and table_data.cur_watch_playernum >= table_data.conf.max_watch_playernum then
+		responsemsg.errcode = EErrCode.ERR_TABLE_FULL
+		responsemsg.errcodedes = " 旁观人数过多!!!"
+		base.skynet_retpack(responsemsg, nil)
+		return 
+	end
 	seat = roomtablelogic.get_seat_by_rid(table_data, request.rid)
 
 	if seat ~= nil then
@@ -99,8 +106,8 @@ function TableRequest.entertable(request)
 	responsemsg.gameinfo = {}
 
 	msghelper:copy_table_gameinfo(responsemsg.gameinfo)
-	filelog.sys_error("rid ===================",request.rid)
-	filelog.sys_error("responsemsg.gameinfo ===================",responsemsg.gameinfo)
+	----filelog.sys_error("rid ===================",request.rid)
+	----filelog.sys_error("responsemsg.gameinfo ===================",responsemsg.gameinfo)
 	base.skynet_retpack(responsemsg, seatinfo)
 	roomtablelogic.entertable(table_data, request, seat)
 end
@@ -144,6 +151,9 @@ function TableRequest.reentertable(request)
 	msghelper:copy_table_gameinfo(responsemsg.gameinfo)
 	base.skynet_retpack(responsemsg, seatinfo)
 	if seat ~= nil then
+		if seat.is_disconnected == 1 then
+			seat.is_disconnected = 0
+		end
 		roomtablelogic.reentertable(table_data, request, seat)	 
 	end
 end
@@ -380,7 +390,6 @@ function TableRequest.doaction(request)
 		base.skynet_retpack(responsemsg)
 		return
 	end
-	filelog.sys_error(" doaction type ======",request.action_type)
 
 	if request.action_type == EActionType.ACTION_TYPE_REQUEST_TUOGUAN then
 		---玩家托管请求
@@ -426,7 +435,6 @@ function TableRequest.doaction(request)
 
 	if request.action_type == EActionType.ACTION_TYPE_FOLLOW_CHUPAI or request.action_type == EActionType.ACTION_TYPE_CHUPAI then
 		--TO ADD 牌大小合法性判断
-		filelog.sys_error("-----------玩家--------出牌",request.cards)
 		---如果是该回合第一个出牌,则只判断牌型的合法性
 		if request.cards == nil or #request.cards == 0 then
 			responsemsg.errcode = EErrCode.ERR_INVALID_CARDTYPE
@@ -436,7 +444,6 @@ function TableRequest.doaction(request)
 		end
 		local cardHelper = table_data.ddzgame.CreateCardsHelper(request.cards)
 		cardHelper:GetCardsType(cardHelper)
-		filelog.sys_error("-----------玩家--------出牌",request.cards,"======================",cardHelper)
 		if cardHelper.m_eCardType == ECardType.DDZ_CARD_TYPE_UNKNOWN then
 			responsemsg.errcode = EErrCode.ERR_INVALID_CARDTYPE
 			responsemsg.errcodedes = "无效牌型！"
@@ -494,7 +501,6 @@ function TableRequest.doaction(request)
 		end
 	elseif request.action_type == EActionType.ACTION_TYPE_JIAODIZHU then
 		---玩家叫地主 判断是否该这个玩家叫地主
-		filelog.sys_error(" ---玩家叫地主-----")
 		if seat.index ~= table_data.action_seat_index then
 			responsemsg.errcode = EErrCode.ERR_INVALID_CARDTYPE
 			responsemsg.errcodedes = "不该你叫地主,慌鸡毛啊！"
@@ -573,9 +579,30 @@ function TableRequest.gameready(request)
 		seat.ready_timer_id = -1
 	end
 	base.skynet_retpack(responsemsg)
-	filelog.sys_error("tablerequest doready ======",responsemsg)
-
 	roomtablelogic.gameready(table_data, request, seat)
+end
+
+--- 玩家发送桌内聊天消息
+-- @param request
+--
+function TableRequest.sendTableMessage(request)
+	local responsemsg = {
+		errcode = EErrCode.ERR_SUCCESS,
+	}
+	local server = msghelper:get_server()
+	local table_data = server.table_data
+	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
+	local seat = roomtablelogic.get_seat_by_rid(table_data, request.rid)
+	local waitplayer = roomtablelogic.get_waitplayer_by_rid(table_data, request.rid)
+	if seat == nil and waitplayer == nil then
+		responsemsg.errcode = EErrCode.ERR_NOT_INTABLE
+		responsemsg.errcodedes = "你已经不在桌内！"
+		base.skynet_retpack(responsemsg)
+		return
+	end
+	------向房间内的玩家广播消息
+	roomtablelogic.sendMessage(table_data, request.messages)
+	base.skynet_retpack(responsemsg)
 end
 
 return TableRequest

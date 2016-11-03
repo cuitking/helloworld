@@ -135,12 +135,12 @@ function TableStatesvrRequest.quickstart(request)
 		base.skynet_retpack(responsemsg)
 		return
 	end
-
+	
 	for i=3, 1, -1 do
 		table_list = game_list[i]
 		for id, _ in pairs(table_list) do
 			tableinfo = table_pool[id]
-			if tableinfo ~= nil and i < tableinfo.max_player_num and tableinfo.distribute_playernum < tableinfo.max_player_num then
+			if tableinfo ~= nil and id ~= request.id and i < tableinfo.max_player_num and tableinfo.distribute_playernum < tableinfo.max_player_num then
 				responsemsg.id = tableinfo.id
 				responsemsg.roomsvr_id = tableinfo.roomsvr_id
 				responsemsg.roomsvr_table_address = tableinfo.roomsvr_table_address 

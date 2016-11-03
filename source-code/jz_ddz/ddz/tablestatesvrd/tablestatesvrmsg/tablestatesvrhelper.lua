@@ -69,7 +69,11 @@ function TableStatesvrHelper:tick()
 	for roomsvr_id, roomsvr in pairs(self.server.roomsvrs) do
 		if roomsvr ~= nil then
 			if roomsvr.update_time ~= nil and roomsvr.update_time + 300 < now_time then
-				self:event_process("lua", "notice", "init", roomsvr_id)
+				if roomsvr.update_time + 360 < now_time then
+					self:get_roomsvr_states()
+				else
+					self:event_process("lua", "notice", "init", roomsvr_id)
+				end
 			end
 		end
 	end

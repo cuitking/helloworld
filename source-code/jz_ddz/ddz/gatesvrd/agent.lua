@@ -77,6 +77,8 @@ function  Agent:init()
 	self.eventmng.add_eventbyname("GetMailsReq","getmails")
 	self.eventmng.add_eventbyname("GetmailItemsReq","getmailsitem")
 	self.eventmng.add_eventbyname("DeleteMailReq","deletemail")
+	self.eventmng.add_eventbyname("RechargeReq","recharge")
+	self.eventmng.add_eventbyname("SendMessageReq","sendmessage")
 
 	Agent.__tostring = agent_to_string						
 end

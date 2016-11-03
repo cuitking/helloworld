@@ -49,7 +49,7 @@ loginsvrs={
 
 
 rechargesvrs={
-	rechargesvr={
+	rechargesvr_1={
 		debug_console_port = 8002,       	
 	}
 }
@@ -61,6 +61,7 @@ httpsvrs={
 		svr_port = 8080,
 		agentsize = 100,
 		agentincr = 50,
+		timeout = 20,
 		--dns_server = "",
 		--dns_port = 0,
 	}
@@ -198,10 +199,30 @@ globaldbsvrs = {
 
 logsvrs={
 	logsvr_1={
-	    loggersize=5,
-    	timersize =10,
 		debug_console_port = 8013,
 	},
+}
+
+rechargedbsvrs = {
+	rechargedbsvr_1={
+		debug_console_port = 8014,
+		redisnum=3, 
+		redisconn={
+			host="127.0.0.1",
+			port=6379,
+			db=0,
+			--auth = "foobared",	
+		},
+		mysqlnum=3,
+		mysqlconn={
+			host="127.0.0.1",
+			port=3306,
+			database="ddzgame_1",
+			user="root",
+			password="",
+			max_packet_size = 1024 * 1024,	
+		},
+	}
 }
 
 

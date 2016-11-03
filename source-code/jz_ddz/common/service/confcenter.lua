@@ -63,19 +63,8 @@ function CMD.reload(...)
 	if cfgclusters ~= nil then
 		sharedata.update(sharedataname_cluster, cfgclusters)		
 	end
+	base.skynet_retpack(true)
 end 
-
-function CMD.set(key, value)
-	if key == nil or value == nil then
-		return
-	end
-	local status, _ = pcall(sharedata.query, key)
-	if not status then
-		sharedata.new(key, value)
-	else
-		sharedata.update(key, value)
-	end
-end
 
 function CMD.exit(...)
 	sharedata.delete(sharedataname)

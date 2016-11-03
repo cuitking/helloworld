@@ -70,7 +70,7 @@ function  GameReady.process(session, source, fd, request)
         msghelper:send_resmsgto_client(fd, "GameReadyRes", responsemsg)
         return
     end
-    filelog.sys_error("gameready =====",responsemsg)
+
     request.rid = server.rid
     processing:set_process_state(true)
     responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "gameready", request)

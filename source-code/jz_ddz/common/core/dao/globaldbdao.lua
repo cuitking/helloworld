@@ -37,15 +37,15 @@ function GlobaldbDao.update(key,  noticemsg)
 	msgproxy.sendrpc_noticemsgto_globaldbsvrd(key, "dao", "update", noticemsg)
 end
 
-function GlobaldbDao.insert(rid,  noticemsg)
+function GlobaldbDao.insert(key,  noticemsg)
 	msgproxy.sendrpc_noticemsgto_globaldbsvrd(key, "dao", "insert", noticemsg)
 end
 
-function GlobaldbDao.delete(rid,  noticemsg)
+function GlobaldbDao.delete(key,  noticemsg)
 	msgproxy.sendrpc_noticemsgto_globaldbsvrd(key, "dao", "delete", noticemsg)
 end
 
-function GlobaldbDao.query(rid, requestmsg)
+function GlobaldbDao.query(key, requestmsg)
 	return msgproxy.sendrpc_reqmsgto_globaldbsvrd(key, "dao", "query", requestmsg)
 end
 

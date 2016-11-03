@@ -8,6 +8,10 @@ local params = ...
 
 local loggerobj = serverbase:new({
     loggerIndex = 0,
+    loggerpath = "",
+    loggerbuffers = {},
+    loggerconf = nil,
+    loggertestIndex = 500,
 })
 
 

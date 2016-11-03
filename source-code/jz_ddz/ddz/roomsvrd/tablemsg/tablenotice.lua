@@ -16,5 +16,9 @@ function TableNotice.get_roomsvr_state( ... )
 	msghelper:report_table_state()
 end
 
+function TableNotice.update_money(rid, update_table)
+
+end
+
 
 return TableNotice

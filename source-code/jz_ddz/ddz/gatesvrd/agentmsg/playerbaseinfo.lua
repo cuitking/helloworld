@@ -41,9 +41,11 @@ function  PlayerBaseinfo.process(session, source, fd, request)
 	if request.rid == server.rid then
 		info = server.info
 		playgame = server.playgame
+		money = server.money
 	else
 		status, info = playerdatadao.query_player_info(request.rid)
 		status, playgame = playerdatadao.query_player_playgame(request.rid)
+		status, money = playerdatadao.query_player_money(request.rid)
 	end
 
 	if not msghelper:is_login_success() then

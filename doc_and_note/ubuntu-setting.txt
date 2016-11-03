@@ -266,6 +266,32 @@ cmake -DLIBBSON_DIR=D:\lib_bson -DBOOST_ROOT=E:\some_int\boost_1_59_0 -DLIBMONGO
 
 
 
+--------------centos 7 安装mysql-----------------
+1.rpm -qa | grep MySQL
+
+2.卸载上面三个包
+rpm  -e  xxxxx
+
+3. rpm -qa | grep mariadb
+
+4. 删除  yum remove mariadbxxxx
+
+5.CentOS 7的yum源中貌似没有正常安装mysql时的mysql-sever文件，需要去官网上下载
+# wget http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm
+# rpm -ivh mysql-community-release-el7-5.noarch.rpm
+# yum install mysql-community-server
+成功安装之后重启mysql服务
+# service mysqld restart
+初次安装mysql是root账户是没有密码的
+设置密码的方法
+# mysql -uroot
+mysql> set password for ‘root’@‘localhost’ = password('root');
+mysql> exit
+
+
+
+
+
 
 
 

@@ -8,6 +8,7 @@ local TableObj = {
 	gamelogic = nil,
 	svr_id = "",
 	timer_id = -1,
+	isdelete = false, --是否被标示为可删除
 } 
 
 
@@ -21,7 +22,8 @@ function TableObj:new(obj)
 	obj.conf = nil
 	obj.gamelogic = nil
 	obj.svr_id = ""
-	obj.timer_id = -1,
+	obj.timer_id = -1
+	obj.isdelete = false
  	setmetatable(obj, self)
  	self.__index = self
  	return obj

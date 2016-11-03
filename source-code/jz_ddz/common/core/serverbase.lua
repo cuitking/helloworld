@@ -129,7 +129,7 @@ function ServerBase:process_client_message(session, source, ...)
 end
 
 function ServerBase:process_other_message(session, source, ...)
-	filelog.sys_info(...)
+	--filelog.sys_info(...)
 	self.eventmng.process(session, source,"lua", ...)
 end
 

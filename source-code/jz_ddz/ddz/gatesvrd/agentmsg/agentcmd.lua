@@ -27,7 +27,9 @@ function AgentCMD.close(...)
 	local server = msghelper:get_server()
 	--延迟释放agent保证agent能正常处理完
 	skynet.sleep(10)
-	server:agentexit(true)
+	if msghelper:is_login_success() then
+		server:agentexit(true)
+	end
 	server:exit_service()
 end
 

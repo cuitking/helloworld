@@ -15,15 +15,10 @@ function Logsvrcmd.process(session, source, event, ...)
 end
 
 function Logsvrcmd.start(conf)
-	local server = msghelper:get_server()
-
 	local logscfg = configdao.get_common_conf("logscfg")
-
-	filelog.sys_error("+++++++++++++++++",logscfg)
 	msghelper:set_idle_logger_pool(logscfg)
-
 	msghelper:loadloggercfg(logscfg)
-
 	skynet.retpack(true)
 end
+
 return Logsvrcmd

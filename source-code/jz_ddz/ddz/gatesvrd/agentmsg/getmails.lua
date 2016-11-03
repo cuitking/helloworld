@@ -68,7 +68,7 @@ function  Getmails.process(session, source, fd, request)
    	if maillimitconf.limitnum > 0 then
    		condition = condition .. " limit " .. tostring(maillimitconf.limitnum)
 	end
-	filelog.sys_error("=============get mails======",condition)
+	---filelog.sys_error("=============get mails======",condition)
 	status, mails = playerdatadao.query_player_mail(server.rid, condition)
 	responsemsg.mailitems = {}
 	if status == false then
@@ -87,7 +87,7 @@ function  Getmails.process(session, source, fd, request)
 											return first.create_time > second.create_time
 											end )
 	end
-	filelog.sys_error("------------GetMailsRes-----------",responsemsg)
+	--filelog.sys_error("------------GetMailsRes-----------",responsemsg)
     msghelper:send_resmsgto_client(fd, "GetMailsRes", responsemsg)
 end
 

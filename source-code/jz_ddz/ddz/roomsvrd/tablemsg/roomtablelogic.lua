@@ -1,3 +1,4 @@
+local skynet = require "skynet"
 local logicmng = require "logicmng"
 local tabletool = require "tabletool"
 local timetool = require "timetool"
@@ -7,6 +8,7 @@ local filelog = require "filelog"
 local msgproxy = require "msgproxy"
 local base = require "base"
 local playerdatadao = require "playerdatadao"
+local configdao = require "configdao"
 require "enum"
 local RoomTableLogic = {}
 
@@ -19,8 +21,6 @@ function RoomTableLogic.init(tableobj, conf, roomsvr_id)
 	local roomseatlogic = logicmng.get_logicbyname("roomseatlogic")
 	tableobj.id = conf.id
 	tableobj.svr_id = roomsvr_id
-
-
 
 	local seatobj = require("object.seatobj")
 	local seat
@@ -45,6 +45,8 @@ function RoomTableLogic.init(tableobj, conf, roomsvr_id)
 			cards = {},		     --玩家手牌
 			ismingpai = 0,		 --是否明牌
 			nojdznums = 0,		 ---玩家都不叫地主,重新发牌,同时该变量+1，当大于配置数时，随机选取地主
+			handsround = 0, 	 ---玩家出牌第几手(判断春天)
+			is_disconnected = 0, ---玩家是否断线
     	})
     	roomseatlogic.init(seat, count)
     	table.insert(tableobj.seats, seat) 
@@ -106,14 +108,15 @@ function RoomTableLogic.entertable(tableobj, request, seat)
 	if seat and seat.is_tuoguan == EBOOL.TRUE then
 		seat.is_tuoguan = EBOOL.FALSE
 
-		--TO ADD 视情况添加解除托管处理 
+		---TO ADD 视情况添加解除托管处理
 	else
 		local waitinfo = tableobj.waits[request.rid]
 		if waitinfo == nil then
 			tableobj.waits[request.rid] = {}
 			waitinfo = tableobj.waits[request.rid]
 			waitinfo.playerinfo = {}
-			tableobj.waits[request.rid] = waitinfo			
+			tableobj.waits[request.rid] = waitinfo
+			tableobj.cur_watch_playernum = tableobj.cur_watch_playernum + 1			 
 		end
 		waitinfo.rid = request.rid
 		waitinfo.gatesvr_id = request.gatesvr_id
@@ -123,7 +126,11 @@ function RoomTableLogic.entertable(tableobj, request, seat)
 		waitinfo.playerinfo.sex=request.playerinfo.sex
 	end
 end
-
+--- 断线重连处理函数
+-- @param tableobj
+-- @param request
+-- @param seat
+--
 function RoomTableLogic.reentertable(tableobj, request, seat)
 	
 	if not RoomTableLogic.is_onegameend(tableobj) then
@@ -137,7 +144,6 @@ function RoomTableLogic.reentertable(tableobj, request, seat)
 			action_seat_index = tableobj.action_seat_index,
 		}
 		reentablemsg.handcards = tabletool.deepcopy(seat.cards)
-        filelog.sys_error("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx====",tableobj.state)
         if tableobj.initCards and type(tableobj.initCards)== "table" and
                 (tableobj.state ~= ETableState.TABLE_STATE_WAIT_PLAYER_JDZ and tableobj.state ~= ETableState.TABLE_STATE_PLAYER_JDZ) then
 		    for k,v in ipairs(tableobj.initCards) do
@@ -163,7 +169,6 @@ function RoomTableLogic.reentertable(tableobj, request, seat)
 			table.insert(reentablemsg.cardsput,noticemsg)
 		end
 		msghelper:sendmsg_to_tableplayer(seat, "ReenterTableNtc", reentablemsg)
-		filelog.sys_error("----------------------断线重连---------------------",reentablemsg)
 		--通知玩家当前该他操作
         if tableobj.action_seat_index == 0 then return end
 		local doactionntcmsg = {
@@ -175,7 +180,10 @@ function RoomTableLogic.reentertable(tableobj, request, seat)
 		msghelper:sendmsg_to_tableplayer(seat, "DoactionNtc", doactionntcmsg)
 	end
 end
-
+--- 被动离开桌子
+-- @param tableobj
+-- @param rid
+-- @param is_sendto_client
 --被动离开桌子，使用该接口时玩家必须是在旁观中
 --记住使用者如果循环遍历旁观队列一定要使用原队列的copy队列
 function RoomTableLogic.passive_leavetable(tableobj, rid, is_sendto_client)
@@ -187,20 +195,18 @@ function RoomTableLogic.passive_leavetable(tableobj, rid, is_sendto_client)
 		rid = rid,
 	}
 	msghelper:sendmsg_to_waitplayer(tableobj.waits[rid], "leavetable", leavetablemsg)
+	tableobj.cur_watch_playernum = tableobj.cur_watch_playernum - 1
 	tableobj.waits[rid] = nil	
 end
 
 function RoomTableLogic.leavetable(tableobj, request, seat)
 	tableobj.waits[request.rid] = nil
+	tableobj.cur_watch_playernum = tableobj.cur_watch_playernum - 1
 end
 
---[[
-
---]]
 function RoomTableLogic.sitdowntable(tableobj, request, seat)
 	tableobj.waits[request.rid] = nil
-
-	---filelog.sys_error("-------------sitdowntable---------------",request.coin)
+	tableobj.cur_watch_playernum = tableobj.cur_watch_playernum - 1
 	seat.rid = request.rid
 	seat.gatesvr_id=request.gatesvr_id
 	seat.agent_address = request.agent_address
@@ -213,10 +219,10 @@ function RoomTableLogic.sitdowntable(tableobj, request, seat)
 	seat.playerinfo.maxcoinnum = request.playerinfo.maxcoinnum
 	seat.playerinfo.coins = request.playerinfo.coins
 	seat.playerinfo.diamonds = request.playerinfo.diamonds
-
 	seat.state = ESeatState.SEAT_STATE_WAIT_READY
 	seat.coin = request.coin
 	seat.ready_to_time = timetool.get_time() + tableobj.conf.ready_timeout
+	seat.is_disconnected = 0
 
 	local noticemsg = {
 		rid = seat.rid,
@@ -229,9 +235,7 @@ function RoomTableLogic.sitdowntable(tableobj, request, seat)
 
 	if seat.is_tuoguan == EBOOL.TRUE then
 		seat.is_tuoguan = EBOOL.FALSE
-		--TO ADD 添加托管处理
 	end
-
 	if seat.ready_timer_id > 0 then
 		timer.cleartimer(seat.ready_timer_id)
 		seat.ready_timer_id = -1
@@ -247,16 +251,22 @@ function RoomTableLogic.sitdowntable(tableobj, request, seat)
 		roomsvr_seat_index = seat.index,
 		ready_to_time = timetool.get_time() + tableobj.conf.ready_timeout,
 	}
-	msghelper:sendmsg_to_alltableplayer("DoReadyNtc", doreadyntcmsg)	
-
+	msghelper:sendmsg_to_alltableplayer("DoReadyNtc", doreadyntcmsg)
 	local roomgamelogic = logicmng.get_logicbyname("roomgamelogic")
-    filelog.sys_error("---------sitdowntable----------",tableobj.state)
 	roomgamelogic.onsitdowntable(tableobj.gamelogic, seat)
     if tableobj.state == ETableState.TABLE_STATE_WAIT_PLAYER_SITDOWN then
         tableobj.state = ETableState.TABLE_STATE_WAIT_ALL_READY
     end
 	msghelper:report_table_state()
-
+	----插入测试邮件
+	local mailconf = configdao.get_business_conf(100, 1000, "mailcfg")
+   	local testplayermail = tabletool.deepcopy(mailconf.testplayermail)
+   	---填充
+   	testplayermail.mail_key = base.generate_uuid()
+   	testplayermail.rid = seat.rid
+   	testplayermail.create_time = timetool.get_time()
+   	testplayermail.reason = ESendMailReasonType.COMMON_TYPE_TESTING
+   	playerdatadao.save_player_mail("insert",seat.rid,testplayermail,nil)
 end
 
 function RoomTableLogic.passive_standuptable(tableobj, request, seat, reason)
@@ -291,7 +301,16 @@ function RoomTableLogic.passive_standuptable(tableobj, request, seat, reason)
 
 	seat.state = ESeatState.SEAT_STATE_NO_PLAYER
 
+	if seat.is_disconnected == 1 then
+		---处理断线进入托管玩家的serveronline，游戏结束后,清除serveronline
+		roomseatlogic.deal_player_online(seat, tableobj.svr_id, tableobj.id, skynet.self())
+		roomgamelogic.standup_clear_seat(tableobj.gamelogic, seat)
+		msghelper:report_table_state()
+		return
+	end
+
 	if tableobj.waits[seat.rid] == nil then
+
 		local waitinfo = {
 			playerinfo = {},
 		}
@@ -303,7 +322,9 @@ function RoomTableLogic.passive_standuptable(tableobj, request, seat, reason)
 		waitinfo.playerinfo.rolename=seat.playerinfo.rolename
 		waitinfo.playerinfo.logo=seat.playerinfo.rolename
 		waitinfo.playerinfo.sex=seat.playerinfo.sex
+		tableobj.cur_watch_playernum = tableobj.cur_watch_playernum + 1
 	end
+	---
 	--初始化座位数据
 	roomgamelogic.standup_clear_seat(tableobj.gamelogic, seat)
 
@@ -337,9 +358,8 @@ function RoomTableLogic.standuptable(tableobj, request, seat)
 		waitinfo.playerinfo.rolename=seat.playerinfo.rolename
 		waitinfo.playerinfo.logo=seat.playerinfo.rolename
 		waitinfo.playerinfo.sex=seat.playerinfo.sex
+		tableobj.cur_watch_playernum = tableobj.cur_watch_playernum + 1
 	end
-
-
 	--初始化座位数据
 	roomgamelogic.standup_clear_seat(tableobj.gamelogic, seat)
 	msghelper:report_table_state()
@@ -363,8 +383,15 @@ function RoomTableLogic.doaction(tableobj, request, seat)
 end
 
 function RoomTableLogic.disconnect(tableobj, request, seat)
-	seat.gatesvr_id = ""
-	seat.agent_address = -1
+--	if seat.gatesvr_id ~= "" then
+--		seat.back_gatesvr_id = seat.gatesvr_id
+--	end
+--	if seat.agent_address ~= -1 then
+--		seat.back_agent_address = seat.agent_address
+--	end
+--	seat.gatesvr_id = ""
+--	seat.agent_address = -1
+	seat.is_disconnected = 1
 	seat.is_tuoguan = EBOOL.TRUE
 	--TO ADD添加玩家掉线处理
     --将玩家站起
@@ -389,7 +416,9 @@ function RoomTableLogic.get_sitdown_player_num(tableobj)
 	return tableobj.sitdown_player_num
 end
 
---根据指定桌位号获得一张空座位
+--- 根据指定桌位号获得一张空座位
+-- @param tableobj 牌桌对象
+-- @param index 座位号
 function RoomTableLogic.get_emptyseat_by_index(tableobj, index)
 	local roomseatlogic = logicmng.get_logicbyname("roomseatlogic")
 	if index == nil or index <= 0 or index > tableobj.conf.max_player_num then
@@ -416,17 +445,32 @@ function RoomTableLogic.get_seat_by_rid(tableobj, rid)
 	return nil
 end
 
---判断桌子是否满了
+--- 根据玩家的rid查找玩家是否在旁观队列
+-- @param tableobj 牌桌对象
+-- @param rid  玩家rid
+function RoomTableLogic.get_waitplayer_by_rid(tableobj, rid)
+	for index, waitplayer in pairs(tableobj.waits) do
+		if rid == waitplayer.rid then
+			return waitplayer
+		end
+	end
+	return nil
+end
+
+--- 判断当前桌子是否坐满
+-- @param tableobj  牌桌对象
 function RoomTableLogic.is_full(tableobj)
 	return (tableobj.sitdown_player_num >= tableobj.conf.max_player_num)
 end
 
---判断当前是否能够开始游戏
+---判断当前是否能够开始游戏
+-- @param tableobj	牌桌对象
 function RoomTableLogic.is_canstartgame(tableobj)
 	return RoomTableLogic.is_full(tableobj)
 end
 
---判断游戏是否结束
+--- 判断游戏是否结束
+-- @param tableobj 牌桌对象
 function RoomTableLogic.is_gameend(tableobj)
 	if tableobj.state == ETableState.TABLE_STATE_GAME_END
             or tableobj.state == ETableState.TABLE_STATE_WAIT_ALL_READY then
@@ -436,7 +480,8 @@ function RoomTableLogic.is_gameend(tableobj)
 	return false
 end
 
---判断当前局是否已经结束游戏
+--- 判断当前局是否已经结束游戏
+-- @param tableobj 牌桌对象
 function RoomTableLogic.is_onegameend(tableobj)
 	if tableobj.state == ETableState.TABLE_STATE_ONE_GAME_END 
 		or tableobj.state == ETableState.TABLE_STATE_ONE_GAME_REAL_END then
@@ -450,10 +495,11 @@ function RoomTableLogic.is_onegameend(tableobj)
 
 	return RoomTableLogic.is_gameend(tableobj)
 end
-
-----玩家准备
+--- 玩家准备处理函数
+-- @param tableobj 牌桌对象
+-- @param request 请求数据
+-- @param seat 桌位对象
 function RoomTableLogic.gameready(tableobj, request, seat)
-    filelog.sys_error("-----------RoomTableLogic.gameready-------------",tableobj.state)
 	if tableobj.state ~= ETableState.TABLE_STATE_WAIT_ALL_READY then
 		return
 	end
@@ -480,13 +526,19 @@ function RoomTableLogic.gameready(tableobj, request, seat)
 	end
 
 end
-
+--- 游戏结束结算函数
+-- @param tableobj 桌子对象
+--
 function RoomTableLogic.balancegame(tableobj)
 	if tableobj.state ~= ETableState.TABLE_STATE_ONE_GAME_END then
 		return
 	end
 	local roomseatlogic = logicmng.get_logicbyname("roomseatlogic")
 	local basevalue = math.floor(tableobj.baseTimes * tableobj.conf.base_coin)
+	local isfriendtable = 0
+	if tableobj.conf.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON then
+		isfriendtable = 1
+	end
 	for k,value in ipairs(tableobj.seats) do
 		local getvalue = 0
 		if value.win == 0 then
@@ -507,7 +559,7 @@ function RoomTableLogic.balancegame(tableobj)
 		else
 			value.coin = 0
 		end
-		roomseatlogic.balancegame(value,getvalue)
+		roomseatlogic.balancegame(value,getvalue,isfriendtable)
 		if tableobj.conf.room_type==ERoomType.ROOM_TYPE_FRIEND_COMMON then
 			if tableobj.gamerecords == nil then RoomTableLogic.initGamerecords(tableobj) end
 			local onerecordmsg = {}
@@ -532,22 +584,39 @@ function RoomTableLogic.balancegame(tableobj)
 				end
 			end
 		end
-		---roomseatlogic.changeCurrency(value,ECurrencyType.CURRENCY_TYPE_COIN,getvalue,EReasonChangeCurrency.CHANGE_CURRENCY_NORMAL_GAME)
 	end
 end
-----玩家出牌超时服务器处理为出一张最小的单牌
+--- 玩家托管或出牌超时,自动出牌处理函数
+-- @param tableobj 桌子对象
+-- 当轮到该玩家出牌时，服务器根据玩家手牌，筛选出一种类型的牌，打出
+-- 目前出牌优先级是(对子>单牌)
 function RoomTableLogic.putCards(tableobj)
 	local seatIndex = tableobj.action_seat_index
 	local seat = tableobj.seats[seatIndex]
 	if (not seat.cards) or #seat.cards <= 0 then
 		return
 	end
-	local cards = { seat.cards[#seat.cards] }
+	local cards = nil
+	local status = false 
+	local cardscontainer = tableobj.ddzgame.extract(seat.cards)
+	if not cardscontainer.pair or #cardscontainer.pair == 0 then
+		if not cardscontainer.single or #cardscontainer.single == 0 then
+			cards = { seat.cards[#seat.cards] }
+		else
+			status, cards = tableobj.ddzgame.getBiggerCards(cardscontainer,0,1)
+		end
+	else
+		status, cards = tableobj.ddzgame.getBiggerCards(cardscontainer,0,2)
+	end
 	local cardHelper = tableobj.ddzgame.CreateCardsHelper(cards)
 	cardHelper:GetCardsType(cardHelper)
 	if cardHelper.m_eCardType ~= ECardType.DDZ_CARD_TYPE_UNKNOWN then
 		----加入牌堆中
-		table.remove(seat.cards,#seat.cards)
+		for k,v in ipairs(cards) do
+			for m,n in ipairs(seat.cards) do
+				if v == n then table.remove(seat.cards,m) end
+			end
+		end
 		if tableobj.CardsHeaps == nil then
 			tableobj.CardsHeaps = {}
 			tableobj.CardsHeaps[#tableobj.CardsHeaps+1] = {}
@@ -559,6 +628,48 @@ function RoomTableLogic.putCards(tableobj)
 		table.insert(tableobj.CardsHeaps[#tableobj.CardsHeaps],heapOne)
 	end
 end
+--- 在玩家托管或跟牌超时时,服务器自动跟牌
+-- @param tableobj 桌子对象
+--
+function RoomTableLogic.followcards(tableobj)
+	-- body
+	local seatIndex = tableobj.action_seat_index
+	local seat = tableobj.seats[seatIndex]
+	if (not seat.cards) or #seat.cards <= 0 then
+		return 
+	end
+	local roundheaps = tableobj.CardsHeaps[#tableobj.CardsHeaps]
+	if not roundheaps or #roundheaps <= 0 then return end
+	local playercardhelper = roundheaps[#roundheaps].cardHelper
+	local status, cardtable = tableobj.ddzgame.getCardsbyCardType(seat.cards,playercardhelper,0)
+	if status == true then
+		if cardtable and type(cardtable) == "table" then
+			local cards = tabletool.deepcopy(cardtable)
+			local cardHelper = tableobj.ddzgame.CreateCardsHelper(cards)
+			cardHelper:GetCardsType(cardHelper)
+			if cardHelper.m_eCardType ~= ECardType.DDZ_CARD_TYPE_UNKNOWN and cardHelper.m_eCardType == playercardhelper.m_eCardType 
+				and cardHelper.m_keyMaxValue > playercardhelper.m_keyMaxValue then
+				for k,v in ipairs(cards) do
+					for m,n in ipairs(seat.cards) do
+						if v == n then table.remove(seat.cards,m) end
+					end
+				end
+				if tableobj.CardsHeaps == nil then
+					tableobj.CardsHeaps = {}
+					tableobj.CardsHeaps[#tableobj.CardsHeaps+1] = {}
+				end
+				local heapOne = {
+					rid = seat.rid,
+					cardHelper = tabletool.deepcopy(cardHelper)
+				}
+				table.insert(tableobj.CardsHeaps[#tableobj.CardsHeaps],heapOne)
+				return true
+			end
+		end
+	end
+	return false
+end
+
 
 function RoomTableLogic.sendGameStart(tableobj)
 	local gamestartntcmsg = {}
@@ -585,27 +696,20 @@ function RoomTableLogic.resetTable(tableobj)
 		msghelper:event_process("lua", "cmd", "delete","gameover")
 	end
 	tableobj.state = ETableState.TABLE_STATE_GAME_START
-	tableobj.action_type =  0		--玩家当前操作类型
-	tableobj.initCards = nil		--牌池
-	tableobj.jzdbegin_index = 0
-	tableobj.CardsHeaps = nil		--保存玩家出过的牌的牌堆
-	tableobj.retain_to_time = 0		 		--桌子保留到的时间(linux时间擢)
-	tableobj.action_seat_index = 0			--当前操作玩家的座位号
-	tableobj.action_to_time = 0				--当前操作玩家的到期时间
-	tableobj.ddzgame = nil 		--棋牌
-	tableobj.dz_seat_index = 0				--记录当前的地主座位号
-	tableobj.baseTimes = 0		   	-- 基础倍数
-	tableobj.noputsCardsNum = 0		---一个出牌回合里,没有出牌的玩家数,不出+1，出牌则置0
-	tableobj.iswilldelete = 0 	---在游戏中如果收到删除指令,则置1,游戏结束再处理
-	tableobj.nojdznums = 0
-	---踢出还在托管状态的玩家
---	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
---	for k,v in ipairs(tableobj.seats) do
---		if v.is_tuoguan == 1 then
---			roomtablelogic.passive_standuptable(tableobj, nil, v, EStandupReason.STANDUP_REASON_READYTIMEOUT_STANDUP)
---		end
---	end
-	---RoomTableLogic.saveGamerecords(tableobj)
+	tableobj.action_type =  0			---玩家当前操作类型
+	tableobj.initCards = nil			---牌池
+	tableobj.jzdbegin_index = 0			---开始叫地主的桌位号
+	tableobj.CardsHeaps = nil			---保存玩家出过的牌的牌堆
+	tableobj.retain_to_time = 0		 	---桌子保留到的时间(linux时间擢)
+	tableobj.action_seat_index = 0		---当前操作玩家的座位号
+	tableobj.action_to_time = 0			---当前操作玩家的到期时间
+	tableobj.ddzgame = nil 				---斗地主牌型逻辑模块
+	tableobj.dz_seat_index = 0			---记录当前的地主座位号
+	tableobj.baseTimes = 0		   		--- 基础倍数
+	tableobj.noputsCardsNum = 0			---一个出牌回合里,没有出牌的玩家数,不出+1，出牌则置0
+	tableobj.iswilldelete = 0 			---在游戏中如果收到删除指令,则置1,游戏结束再处理
+	tableobj.nojdznums = 0				----不叫地主玩家数
+	tableobj.ischuntian = 0 			---记录是否是春天
 end
 
 function RoomTableLogic.isQiangdz(tableobj)
@@ -666,7 +770,9 @@ function RoomTableLogic.initGamerecords(tableobj)
 		tableobj.gamerecords = {}
 	end
 end
-
+--- 保存牌桌战绩记录
+-- @param tableobj 桌子对象
+--
 function RoomTableLogic.saveGamerecords(tableobj)
 	-- body
 	filelog.sys_error("-------------saveGamerecords------------------",tableobj.conf.room_type,"++++++++++++",
@@ -682,17 +788,22 @@ function RoomTableLogic.saveGamerecords(tableobj)
 				tablerecords.tablecreater_rid = tableobj.conf.create_user_rid
 				tablerecords.rid = value.rid
 				tablerecords.record = tabletool.deepcopy(tableobj.gamerecords)
-				---msgproxy.sendrpc_noticemsgto_gatesvrd()
 				filelog.sys_error("-------------saveGamerecords------------------",tablerecords)
 				playerdatadao.save_player_tablerecords("insert",value.rid,tablerecords)
 			end
 		end
 	end
 end
-
-function RoomTableLogic.insertGamerecords()
-	-- body
-
+--- 向桌内的玩家广播聊天消息
+-- @param tableobj
+-- @param message
+--
+function RoomTableLogic.sendMessage(tableobj,message)
+	local responmsg = {
+		messages = tabletool.deepcopy(message)
+	}
+	msghelper:sendmsg_to_alltableplayer("PlayerMessageNtc",responmsg)
 end
+
 
 return RoomTableLogic

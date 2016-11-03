@@ -8,6 +8,7 @@ local gamelog = require "gamelog"
 local processstate = require "processstate"
 local playerdatadao = require "playerdatadao"
 local base = require "base"
+local msgproxy = require "msgproxy"
 local table = table
 require "enum"
 local processing = processstate:new({timeout = 5})
@@ -85,18 +86,20 @@ function  EnterGame.process(session, source, fd, request)
 		return    	   		
    	end
    	local status
+   	local isreg = 0
    	status, server.info = playerdatadao.query_player_info(request.rid)
    	----新注册玩家发一封邮件
-   	---if status == true then
+   	if status == true then
+   		isreg = 1
    		local mailconf = configdao.get_business_conf(100, 1000, "mailcfg")
    		local newplayermail = tabletool.deepcopy(mailconf.newplayermail)
    		---填充
    		newplayermail.mail_key = base.generate_uuid()
    		newplayermail.rid = request.rid
    		newplayermail.create_time = timetool.get_time()
-   		filelog.sys_error("---------insert--newplayermail------",newplayermail)
+   		newplayermail.reason = ESendMailReasonType.COMMON_TYPE_TESTING
    		playerdatadao.save_player_mail("insert",request.rid,newplayermail,nil)
-   	---end
+   	end
 	status, server.playgame = playerdatadao.query_player_playgame(request.rid)
 	status, server.online = playerdatadao.query_player_online(request.rid)
 	status, server.money = playerdatadao.query_player_money(request.rid)
@@ -154,9 +157,6 @@ function  EnterGame.process(session, source, fd, request)
 	responsemsg.roomsvr_id = server.online.roomsvr_id
 	responsemsg.roomsvr_table_address = server.online.roomsvr_table_address 
 	responsemsg.baseinfo = {}
-	if server.money.coin > server.playgame.maxcoinnum then
-		server.playgame.maxcoinnum = server.money.coin
-	end
 
 	msghelper:copy_base_info(responsemsg.baseinfo, server.info, server.playgame, server.money)
 
@@ -172,6 +172,9 @@ function  EnterGame.process(session, source, fd, request)
 	playerdatadao.save_player_online("update", request.rid, server.online)
 
 	msghelper:send_resmsgto_client(fd, "EnterGameRes", responsemsg)
+
+	gamelog.write_player_loginlog(isreg, server.uid, server.rid, server.regfrom, server.platform, 
+		server.channel, server.authtype, server.version, timetool.get_time())
 end
 
 return EnterGame

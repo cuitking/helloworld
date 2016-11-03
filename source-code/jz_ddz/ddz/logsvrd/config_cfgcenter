@@ -1,15 +1,41 @@
 ---------------------------------------------------
 
-logrootpath ="../../../logs"
+logrootpath ="../logs"
 logscfg = {
-	moneylogcfg = {
-		moneylogpath = logrootpath .. "/money",
-		splitfilesize = 4096,
+	coinlogscfg = {
+		logsname = "coinlog", --日志类别
+		logspath = logrootpath .. "/coinlog", --日志类别对应的路径
+		splitfilesize = 250*4096,--每个日志切分的大小 单位为字节
+		begin_id = 100000, --该类日志的起始id，各类之间不能重叠
+		num = 2, ---用于写该类日志的服务数量
 	},
-	
+    diamondlogscfg = {
+        logsname = "diamondlog",
+        logspath = logrootpath .. "/diamondlog",
+        splitfilesize = 250*4096,
+        begin_id = 110000,
+        num = 2,
+    },
+	iosdeliverreqlogs = {
+		logsname = "iosdeliverreqlog",
+		logspath = logrootpath .. "/iosdeliverreqlog",
+		splitfilesize = 250*4096,
+		begin_id = 120000,
+		num = 1,
+	},
+	loginscfg = {
+		logsname = "loginlog",
+		logspath = logrootpath .. "/loginlog",
+		splitfilesize = 250*4096,
+		begin_id = 130000,
+		num = 1,
+	},
 	recordlogcfg = {
-		recordlogpath = logrootpath .. "/record",
-		splitfilesize = 4096,
+		logsname = "recordlog",
+		logspath = logrootpath .. "/recordlog",
+		splitfilesize = 250*4096,
+		begin_id = 140000,
+		num = 1,
 	},
 }
 

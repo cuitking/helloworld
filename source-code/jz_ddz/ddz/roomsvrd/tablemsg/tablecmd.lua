@@ -60,12 +60,14 @@ end
 
 function TableCMD.reload(conf)
 	local server = msghelper:get_server()
-	if conf.version <= server.conf.version then
+	local table_data = server.table_data
+	if conf.version <= table_data.conf.version then
 		return
 	end 
 
-	local table_data = server.table_data
 	--TO ADD 添加reload操作
+	---判断桌子是否在游戏中,如果是在游戏中，这将配置文件缓存
+
 end
 
 function TableCMD.delete(...)
@@ -75,8 +77,6 @@ function TableCMD.delete(...)
 	local table_data = server.table_data
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 
-	msgproxy.sendrpc_broadcastmsgto_tablesvrd("delete", table_data.svr_id , table_data.id)
-	
 	--检查桌子当前是否能够删除
 	filelog.sys_error("------------table  delete ------------")
 	if table_data.delete_table_timer_id > 0 then
@@ -99,6 +99,9 @@ function TableCMD.delete(...)
 
 	---纪录牌桌战绩数据
 	roomtablelogic.saveGamerecords(table_data)
+
+	msgproxy.sendrpc_broadcastmsgto_tablesvrd("delete", table_data.svr_id , table_data.id)
+
 	--通知roomsvrd删除table
 	skynet.send(table_data.svr_id, "lua", "cmd", "delete_table", table_data.id)
 		

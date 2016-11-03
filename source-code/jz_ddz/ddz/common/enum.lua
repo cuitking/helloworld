@@ -26,6 +26,11 @@ EErrCode = {
 	ERR_INVALID_CARDTYPE =25,  --无效的牌型
 	ERR_NOT_NO_PLAYER = 26, -- 座位不是没有玩家的状态
 	ERR_PLAYER_IN_GAME = 27, --- 玩家正在游戏中
+	ERR_INVALID_GOODID = 28, --无效的商品id
+	ERR_GENERATE_ORDER_FAILED = 29,  --生成订单失败
+	ERR_SAVE_ORDER_FAILED = 30,      --保存订单失败
+	ERR_IOS_CHECK_FAILED = 31,       --ios支付验单失败
+	ERR_INVALID_GOOD = 32, 			 --无效的商品
 }
 
 --agent的状态
@@ -133,6 +138,14 @@ EPublishChannel = {
 	PUBLISH_CHANNEL_COMMON = 1000,  --通用渠道
 }
 
+--支付类型
+EPayType = {
+	PAY_TYPE_IOS=1, --IOS支付
+	PAY_TYPE_WECHAT = 2, --微信支付
+	PAY_TYPE_ZHIFUBAO = 3, --支付宝
+}
+
+
 --玩家站起原因
 EStandupReason = {
 	STANDUP_REASON_UNKNOW = 0,
@@ -184,7 +197,9 @@ ECurrencyType = {
 ---货币变化的原因
 EReasonChangeCurrency = {
 	CHANGE_CURRENCY_UNKNOWN = 0,
-	CHANGE_CURRENCY_NORMAL_GAME = 1,
+	CHANGE_CURRENCY_SYSTEM_GAME = 1, --系统桌结算
+	CHANGE_CURRENCY_FRIEND_TABLE =2, --朋友桌结算
+	CHANGE_CURRENCY_RECHARGE = 3, --商城充值
 }
 
 ---倍数配置
@@ -206,5 +221,10 @@ EPushcardsType = {
 	COMMOM_LAST_TIMES = 2  ---最大重复发牌次数
 }
 
+
+ESendMailReasonType = {
+	COMMON_TYPE_TESTING = 1, ---测试邮件
+	COMMON_TYPE_MOVING = 2, ---活动邮件
+}
 
 

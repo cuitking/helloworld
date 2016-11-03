@@ -36,6 +36,10 @@ function DatadbDao.insert(rid,  noticemsg)
 	msgproxy.sendrpc_noticemsgto_datadbsvrd(rid, "dao", "insert", noticemsg)
 end
 
+function DatadbDao.sync_insert(rid, noticemsg)
+	return msgproxy.sendrpc_reqmsgto_datadbsvrd(rid, "dao", "sync_insert", noticemsg)
+end
+
 function DatadbDao.delete(rid,  noticemsg)
 	msgproxy.sendrpc_noticemsgto_datadbsvrd(rid, "dao", "delete", noticemsg)
 end

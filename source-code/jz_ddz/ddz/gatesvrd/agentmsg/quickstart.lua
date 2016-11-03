@@ -51,7 +51,6 @@ function  QuickStart.process(session, source, fd, request)
 			errcodedes = "无效的请求!"
 		}
 	end
-
 	msghelper:send_resmsgto_client(fd, "QuickStartRes", responsemsg)
 end
 

@@ -1,10 +1,12 @@
 local dao = require "dao.datadbdao"
+local rechargedbdao = require "dao.rechargedbdao"
 local filelog = require "filelog"
 local tonumber = tonumber
 local timetool = require "timetool"
 local tabletool = require "tabletool"
 local configdao = require "configdao"
 local json = require "cjson"
+local base = require "base"
 
 local playerdbinit = nil
 
@@ -417,14 +419,6 @@ function PlayerdataDAO.query_player_tablerecords(rid)
 
 	if (responsemsg.data == nil or tabletool.is_emptytable(responsemsg.data)) 
 		and responsemsg.isredisormysql then
-		if playerdbinit == nil then
-			playerdbinit = configdao.get_business_conf(100, 1000, "playerdbinit")
-		end
-		tablerecords = tabletool.deepcopy(playerdbinit.tablerecords)
-		tablerecords.rid = rid
-		--保存数据
-		--filelog.sys_error("-------query---tablerecords-------",tablerecords)
-		PlayerdataDAO.save_player_tablerecords("insert", rid, tablerecords)
 		return true, tablerecords
 	elseif responsemsg.isredisormysql then
 		responsemsg.data[1].update_time = nil
@@ -440,7 +434,6 @@ function PlayerdataDAO.query_player_tablerecords(rid)
 			table.insert(tablerecords,base)
 		end
 	end
-	---filelog.sys_error("-------query---tablerecords-------",tablerecords)
 	return false, tablerecords
 
 end
@@ -512,31 +505,18 @@ function PlayerdataDAO.query_player_mail(rid,condition)
 	end
 	if (responsemsg.data == nil or tabletool.is_emptytable(responsemsg.data)) 
 		and responsemsg.isredisormysql then
-		if playerdbinit == nil then
-			playerdbinit = configdao.get_business_conf(100, 1000, "playerdbinit")
-		end
-		local onemailinfo = tabletool.deepcopy(playerdbinit.mailinfos)
-		onemailinfo.rid = rid
-		table.insert(mails,onemailinfo)
 		return true, mails
 	end
-	if type(responsemsg.data) == "table" then
-		for k,v in ipairs(responsemsg.data) do
-			local base = tabletool.deepcopy(v)
-			base.rid = rid
-			table.insert(mails,base)
-		end
-	end
-	return false, mails
+	return false, responsemsg.data
 end
 
 
 function PlayerdataDAO.save_player_mail(cmd, rid, mail, condition)
-	if cmd == nil or rid == nil or mail == nil then
+	if cmd == nil or rid == nil or (mail == nil and cmd ~= "delete") then
 		filelog.sys_error("PlayerdataDAO.save_player_mail invalid params")
 		return
 	end
-	if type(mail.content) == "table" then
+	if mail and type(mail.content) == "table" then
 		mail.content = json.encode(mail.content)
 	end
 
@@ -564,6 +544,190 @@ function PlayerdataDAO.save_player_mail(cmd, rid, mail, condition)
 	f(rid, noticemsg)
 end
 
+function PlayerdataDAO.query_player_iosbatchs(rid,condition)
+	local responsemsg
+	local iosbatchs = {}
+	if rid == nil then
+		filelog.sys_error("PlayerdataDAO.query_player_iosbatchs invalid rid")
+		return nil, nil
+	end
+	local requestmsg = {
+		rid = rid,
+		---rediscmd = "",
+		mysqltable = "role_iosbatchs",
+		mysqlcondition = nil,
+		choosedb = 2,
+	}
+	if condition and type(condition) == "string" then
+		requestmsg.mysqlcondition = condition
+	else
+		requestmsg.mysqlcondition = { rid = rid}
+	end
 
+	responsemsg = dao.query(rid, requestmsg)
+	if responsemsg == nil then
+		filelog.sys_error("PlayerdataDAO.query_player_iosbatchs failed because cannot access datadbsvrd")
+		return nil, nil		
+	end
+
+	if not responsemsg.issuccess then
+		filelog.sys_error("PlayerdataDAO.query_player_iosbatchs failed because datadbsvrd exception")		
+		return nil, nil
+	end
+	if (responsemsg.data == nil or tabletool.is_emptytable(responsemsg.data)) 
+		and responsemsg.isredisormysql then
+		return true, iosbatchs
+	end
+	if type(responsemsg.data) == "table" then
+		for _,v in ipairs(responsemsg.data) do
+			table.insert(iosbatchs,v)
+		end
+	end
+	return false, iosbatchs
+end
+
+
+function PlayerdataDAO.save_player_iosbatch(cmd, rid, iosbatch, condition)
+	if cmd == nil or rid == nil or (iosbatch == nil and cmd ~= "delete") then
+		filelog.sys_error("PlayerdataDAO.save_player_iosbatch invalid params")
+		return
+	end
+
+	-- body
+	local noticemsg = {
+		rid = rid,
+		--rediscmd = "",
+		mysqltable = "role_iosbatchs",
+		mysqldata = iosbatch,
+		mysqlcondition = nil,
+		choosedb = 2,
+	}
+
+	if condition and type(condition) == "string" then
+		noticemsg.mysqlcondition = condition
+	else
+		noticemsg.mysqlcondition = { rid = rid}
+	end
+	
+	local f = dao[cmd]
+	if f == nil then
+		filelog.sys_error("PlayerdataDAO.save_player_iosbatch invalid cmd", cmd, iosbatch)
+		return
+	end
+	f(rid, noticemsg)
+end
+
+function PlayerdataDAO.query_player_order(rid, order_id)
+	local responsemsg
+	if rid == nil or order_id == nil then
+		filelog.sys_error("PlayerdataDAO.query_player_order invalid rid or order_id")
+		return nil, nil
+	end
+	local requestmsg = {
+		order_id = order_id,
+		---rediscmd = "",
+		mysqltable = "role_orders",
+		mysqlcondition = {
+			rid = rid,
+			order_id = order_id,
+		},
+		choosedb = 2,
+	}
+
+	responsemsg = rechargedbdao.query(requestmsg.order_id, requestmsg)
+	if responsemsg == nil then
+		filelog.sys_error("PlayerdataDAO.query_player_order failed because cannot access rechargedbsvrd")
+		return nil, nil		
+	end
+
+	if not responsemsg.issuccess then
+		filelog.sys_error("PlayerdataDAO.query_player_order failed because rechargedbsvrd exception")		
+		return nil, nil
+	end
+	if (responsemsg.data == nil or tabletool.is_emptytable(responsemsg.data)) 
+		and responsemsg.isredisormysql then
+		return true, nil
+	end
+
+	return false, responsemsg.data[1]
+end
+
+function PlayerdataDAO.query_player_orders(rid)
+	local responsemsg
+	local orders = {}
+	if rid == nil then
+		filelog.sys_error("PlayerdataDAO.query_player_orders invalid rid")
+		return nil, nil
+	end
+	local requestmsg = {
+		order_id = "orders",
+		---rediscmd = "",
+		mysqltable = "role_orders",
+		mysqlcondition = {
+			rid = rid,
+		},
+		choosedb = 2,
+	}
+
+	responsemsg = rechargedbdao.query(requestmsg.order_id, requestmsg)
+	if responsemsg == nil then
+		filelog.sys_error("PlayerdataDAO.query_player_orders failed because cannot access rechargedbsvrd")
+		return nil, nil		
+	end
+
+	if not responsemsg.issuccess then
+		filelog.sys_error("PlayerdataDAO.query_player_orders failed because rechargedbsvrd exception")		
+		return nil, nil
+	end
+	if (responsemsg.data == nil or tabletool.is_emptytable(responsemsg.data)) 
+		and responsemsg.isredisormysql then
+		return true, orders
+	end
+	if type(responsemsg.data) == "table" then
+		for _,v in ipairs(responsemsg.data) do
+			table.insert(orders,v)
+		end
+	end
+	return false, orders
+end
+
+function PlayerdataDAO.save_player_order(cmd, rid, order, condition)
+	if cmd == nil or rid == nil or (order == nil and cmd ~= "delete") then
+		filelog.sys_error("PlayerdataDAO.save_player_order invalid params")
+		return false
+	end
+
+	-- body
+	local noticemsg = {
+		order_id = order.order_id,
+		--rediscmd = "",
+		mysqltable = "role_orders",
+		mysqldata = order,
+		mysqlcondition = nil,
+		choosedb = 2,
+	}
+
+	if condition and type(condition) == "string" then
+		noticemsg.mysqlcondition = condition
+	else
+		noticemsg.mysqlcondition = { rid = rid}
+	end
+	
+	local f = rechargedbdao[cmd]
+	if f == nil then
+		filelog.sys_error("PlayerdataDAO.save_player_order invalid cmd", cmd, order)
+		return false
+	end
+	if cmd == "sync_insert" then
+		local responsemsg = f(order.order_id, noticemsg)
+		return responsemsg.issuccess
+	end
+
+	if cmd == "sync_update" then
+		local responsemsg = f(order.order_id, noticemsg)
+		return responsemsg.issuccess
+	end
+	f(order.order_id, noticemsg)
+end
 
 return PlayerdataDAO

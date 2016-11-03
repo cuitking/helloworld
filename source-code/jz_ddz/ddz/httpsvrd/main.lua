@@ -4,7 +4,6 @@ local configdao = require "configdao"
 
 skynet.start(function()
 	print("Server start")
-	local console = skynet.newservice("console")
 	skynet.newservice("systemlog")
     local confcentersvr = skynet.newservice("confcenter")
     skynet.call(confcentersvr, "lua", "start")
@@ -39,8 +38,9 @@ skynet.start(function()
             skynet.call(svr, "lua", "init", conf)            
         end
     end]]
-    
-    local svr = skynet.newservice("httpsvrd", skynet.getenv("svr_id"))
+
+    local params = ",,,,,"..skynet.getenv("svr_id")    
+    local svr = skynet.newservice("httpsvrd", params)
     skynet.call(svr, "lua", "cmd", "start", httpsvr)
 
 	print("httpsvrd start success")

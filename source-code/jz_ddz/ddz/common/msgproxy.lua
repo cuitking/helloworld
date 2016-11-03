@@ -581,7 +581,7 @@ function MsgProxy.sendrpc_broadcastmsgto_groupstatesvrd(...)
 	return true
 end
 
-----------------------shopsvrd相关的交互接口------------------
+----------------------rechargesvrd相关的交互接口------------------
 function MsgProxy.sendrpc_reqmsgto_rechargesvrd(...)
 	local status, result1, result2, result3, result4
 	init_svrs_indexs()
@@ -767,7 +767,7 @@ function MsgProxy.sendrpc_reqmsgto_globaldbsvrd(key, ...)
 	local svr_id = get_globaldbsvr_id(key)
 	status, result1, result2, result3, result4 = skynet.call(proxy, "lua", "request", svr_id, svr_id, ...)		
 	if not status then
-		filelog.sys_error("MsgProxy.sendrpc_reqmsgto_datadbsvrd error server exception", result1)
+		filelog.sys_error("MsgProxy.sendrpc_reqmsgto_globaldbsvrd error server exception", result1)
 		return nil
 	end
 	return result1, result2, result3, result4
@@ -780,11 +780,6 @@ function MsgProxy.sendrpc_noticemsgto_globaldbsvrd(key, ...)
 end
 
 ------------------和Logsvrd相关的交互接口-----------------------------
-function MsgProxy.sendrpc_reqmsgto_logsvrd()
-
-
-end
-
 function MsgProxy.sendrpc_noticemsgto_logsvrd(...)
 	init_svrs_indexs()
 	local svrs = svrs_indexs["logsvrs"]
@@ -795,6 +790,30 @@ function MsgProxy.sendrpc_noticemsgto_logsvrd(...)
 	end
 	return true
 end
+-------------------和rechargedbsvrd相关的交互接口-----------------------
+function MsgProxy.sendrpc_reqmsgto_rechargedbsvrd(order_id, ...)
+	local status, result1, result2, result3, result4
+	init_svrs_indexs()
+	for _, svr_id in pairs(svrs_indexs["rechargedbsvrs"]) do
+		status, result1, result2, result3, result4 = skynet.call(proxy, "lua", "request", svr_id, svr_id, ...)		
+		if not status then
+			filelog.sys_error("MsgProxy.sendrpc_reqmsgto_rechargedbsvrd error server exception", result1)
+			return nil
+		end
+		break		
+	end
+	return result1, result2, result3, result4
+end
+
+function MsgProxy.sendrpc_noticemsgto_rechargedbsvrd(order_id, ...)
+	init_svrs_indexs()
+	for _, svr_id in pairs(svrs_indexs["rechargedbsvrs"]) do
+		skynet.send(proxy, "lua", "notice", svr_id, svr_id, ...)		
+		break
+	end
+	return true
+end
+
 
 return MsgProxy
 

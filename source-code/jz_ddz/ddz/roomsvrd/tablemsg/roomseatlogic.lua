@@ -36,12 +36,12 @@ function RoomSeatLogic.dealcards(seatobj)
 	if noticemsg.cards == nil then
 		noticemsg.cards = tabletool.deepcopy(seatobj.cards)
 	end
-	---filelog.sys_error("--------------fapai----------------------",seatobj.cards)
 	msghelper:sendmsg_to_tableplayer(seatobj,"DealCardsNtc",noticemsg)
+	noticemsg.cards = {}
+	msghelper:sendmsg_to_allwaitplayer("DealCardsNtc",noticemsg)
 end
 
 function RoomSeatLogic.setSeatstate(gameobj)
-	---filelog.sys_error("---------change------------------",gameobj.action_type)
 	if gameobj.action_type == EActionType.ACTION_TYPE_CHUPAI then
 		gameobj.seats[gameobj.action_seat_index].state = ESeatState.SEAT_STATE_CHUPAI
 	elseif gameobj.action_type == EActionType.ACTION_TYPE_FOLLOW_CHUPAI then
@@ -57,7 +57,6 @@ function RoomSeatLogic.setSeatstate(gameobj)
 	elseif gameobj.action_type == EActionType.ACTION_TYPE_BUQIANGDIZHU then
 		gameobj.seats[gameobj.action_seat_index].state = ESeatState.SEAT_STATE_NOT_QIANGDZ
 	end
-	---filelog.sys_error("---------change------------------",gameobj.action_type,gameobj.action_seat_index,gameobj.seats[gameobj.action_seat_index].state,"?????????????????")
 end
 
 function RoomSeatLogic.resetstate(seatobj)
@@ -75,6 +74,7 @@ function RoomSeatLogic.resetstate(seatobj)
 		seatobj.ready_to_time = 0   ---准备到期时间
 		seatobj.cards = {}   ---玩家手牌
 		seatobj.ismingpai = 0 ---是否明牌
+		seatobj.handsround = 0
 	elseif seatobj.state == ESeatState.SEAT_STATE_TAOPAO then
 		seatobj.state = ESeatState.SEAT_STATE_WAIT_READY
 		seatobj.timeout_count = 0
@@ -87,6 +87,7 @@ function RoomSeatLogic.resetstate(seatobj)
 		seatobj.ready_to_time = 0   ---准备到期时间
 		seatobj.cards = {}   ---玩家手牌
 		seatobj.ismingpai = 0 ---是否明牌
+		seatobj.handsround = 0
 	end
 end
 
@@ -112,6 +113,8 @@ function RoomSeatLogic.clear_seat(seat)
 	seat.coin = 0
 	seat.ready_to_time = 0
 	seat.cards = nil
+	seat.handsround = 0
+	seat.is_disconnected = 0
 	if seat.ready_timer_id > 0 then
 		timer.cleartimer(seat.ready_timer_id)
 		seat.ready_timer_id = -1
@@ -129,7 +132,6 @@ function RoomSeatLogic.dealtuoguan(gameobj,seat)
 		}
 		msghelper:sendmsg_to_alltableplayer("DoactionResultNtc", noticemsg)
 		----如果已经注册玩家操作超时定时器,则取消
-		---filelog.sys_error("----tuoguan-------gameobj.action_seat_index",gameobj.action_seat_index,gameobj.action_type,gameobj.action_to_time,seat.index)
 		if gameobj.action_seat_index == seat.index then
 			if gameobj.timer_id > 0 then
 				timer.cleartimer(gameobj.timer_id)
@@ -142,7 +144,6 @@ function RoomSeatLogic.dealtuoguan(gameobj,seat)
 				action_to_time = gameobj.action_to_time,
 			}
 			local lefttime = gameobj.action_to_time - timetool.get_time()
-			---filelog.sys_error("---------------处理定时器-----------",lefttime)
 			if lefttime <= ETuoguanDelayTime.TUOGUAN_DELAY_TIME and lefttime > 0 then
 				gameobj.timer_id = timer.settimer(lefttime*100, "doaction", doactionntcmsg)
 			else
@@ -164,7 +165,6 @@ function RoomSeatLogic.canceltuoguan(gameobj,seat)
 		}
 		msghelper:sendmsg_to_alltableplayer("DoactionResultNtc", noticemsg)
 		----如果已经注册玩家操作超时定时器,则取消
-		---filelog.sys_error("----quxiaotuoguan-------gameobj.action_seat_index",gameobj.action_seat_index,gameobj.action_type,gameobj.action_to_time,seat.index)
 		if gameobj.action_seat_index == seat.index then
 			if gameobj.timer_id > 0 then
 				timer.cleartimer(gameobj.timer_id)
@@ -177,7 +177,6 @@ function RoomSeatLogic.canceltuoguan(gameobj,seat)
 				action_to_time = gameobj.action_to_time,
 			}
 			local lefttime = gameobj.action_to_time - timetool.get_time()
-			---filelog.sys_error("---------------quxiaotuoguan处理定时器-----------",lefttime)
 			if lefttime > 0 then
 				gameobj.timer_id = timer.settimer(lefttime*100, "doaction", doactionntcmsg)
 			end
@@ -185,15 +184,34 @@ function RoomSeatLogic.canceltuoguan(gameobj,seat)
 	end
 end
 
-function RoomSeatLogic.balancegame(seat,getvalue)
-	msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, "updatecurrency",
-		seat.rid,ECurrencyType.CURRENCY_TYPE_COIN,getvalue,EReasonChangeCurrency.CHANGE_CURRENCY_NORMAL_GAME)
-	msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, "updategameinfo",seat.rid,seat.win,seat.isdz,1,reason)
+function RoomSeatLogic.balancegame(seat,getvalue,isfriendtable)
+	local reason = ""
+	if isfriendtable == 1 then
+		 reason = reason .. EReasonChangeCurrency.CHANGE_CURRENCY_FRIEND_TABLE
+	else
+		 reason = reason .. EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME
+	end
+	local key_value_table = {
+		money = {
+			coin = getvalue,
+			diamond = 0,
+		},
+		playgame = {
+			totalgamenum = 1,
+			winnum = 0,
+		}
+	}
+	if seat.win == 1 then key_value_table.playgame.winnum = 1 end
+	local is_sendtoclient = 0
+	if seat.is_disconnected == 0 then
+		is_sendtoclient = 1
+	end
+
+	msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, "updateplayerinfo",seat.rid,key_value_table,reason,is_sendtoclient)
 end
 
 function RoomSeatLogic.onegamestart_initseat(seat)
 	seat.state = ESeatState.SEAT_STATE_PLAYING
-	seat.timeout_count = 0
 	seat.ready_to_time = 0
 	if seat.ready_timer_id > 0 then
 		timer.cleartimer(seat.ready_timer_id)
@@ -201,6 +219,16 @@ function RoomSeatLogic.onegamestart_initseat(seat)
 	end
 end
 
-
+function RoomSeatLogic.deal_player_online(seat,svr_id,id,table_address)
+	if not seat then return end
+	local leavetablemsg = {
+			roomsvr_id = svr_id,
+			roomsvr_table_id = id,
+			roomsvr_table_address = table_address,
+			is_sendto_client = false,
+			rid = seat.rid,
+	}
+	msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, "leavetable", leavetablemsg)
+end
 
 return RoomSeatLogic

@@ -12,14 +12,14 @@ playgame = {
 	totalgamenum = 0, ---总局数
     winnum = 0, ---胜场数
     wininseriesnum = 0, ---连胜记录
-    maxcoinnum = 0, ----最大金币数
     highwininseries = 0, ---最大连胜纪录
 }
 
 money = {
     rid = 0,
-	coin = 10000000,  ---金币
-	diamond = 1000000, ---钻石
+	coin = 900000000,  ---金币
+	diamond = 9000000, ---钻石
+	maxcoinnum = 900000000, ----最大金币数
 }
 
 online = {
@@ -51,4 +51,5 @@ mailinfos = {
 	create_time = 0,
 	isattach = 0,
 	content = "",
+	reason = 0,
 }

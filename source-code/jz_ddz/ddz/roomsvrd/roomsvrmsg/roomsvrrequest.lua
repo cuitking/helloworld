@@ -70,6 +70,7 @@ function RoomsvrRequest.createfriendtable(session, source, request)
     	common_times  = ECommonTimesType.COMMONTIMES_DEFAULT,			---
     	iscontrol = request.iscontrol,
     	ready_timeout = EReadyTimesType.COMMON_READYTIMES_DEFAULT,
+    	max_watch_playernum = 20,
 	}
 
     local result, create_table_id = msghelper:create_friend_table(conf)

@@ -81,8 +81,12 @@ skynet.start(function()
         nowtime = timetool.get_time()
         for gatesvrid, gatesvrinfo in pairs(gatecachedata) do
           if gatesvrinfo.updatetime + 120 <= nowtime then
-            filelog.sys_warning("delete zombie gatesvr", gatesvrid, gatesvrinfo)
-            table.insert(deletearray, gatesvrid)
+            if gatesvrinfo.updatetime + 240 <= nowtime then
+              filelog.sys_warning("delete zombie gatesvr", gatesvrid, gatesvrinfo)
+              table.insert(deletearray, gatesvrid)
+            else
+              msgproxy.sendrpc_broadcastmsgto_gatesvrd("get_gatesvr_state")
+            end 
           end
         end
         i = 1

@@ -50,7 +50,7 @@ function _module.new(fileName, datePattern, pattern)
                 if (file ~= nil) then
                     file:close()
                 end
-                file = io.open(string.format(fileName, currentDate), "a")
+                file = io.open(string.format(fileName), "a")
                 if (not file) then
                     io.stderr:write(string.format("Log4LUA ERROR: File '%s' cannot be opened for writing. Disabling appender.\n", fileName))
                 else

@@ -1,70 +1,7 @@
---[[
-   Copyright (C) 2008 optivo GmbH
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 of the License.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
---]]
-
----	Logging facility.</br>
---
--- A logger consists of a category (to distinct different modules etc.) and an appender which actually
--- writes the message (to console, file etc.)
---
--- <h3>Configuration</h3>
--- A sample configuration file looks like this:<br />
--- <code class="lua">
---      local logger = require("optivo.common.log4lua.logger")<br />
---      local console = require("optivo.common.log4lua.appenders.console")<br />
---      local file = require("optivo.common.log4lua.appenders.file")<br />
---      local config = {}<br />
---      <br />
---      -- ROOT category must be configured.<br />
---      config["ROOT"] = logger.Logger.new(console.new(), "ROOT", logger.FATAL)<br />
---      config["foo"] = logger.Logger.new(file.new("foo-%s.log", "%Y-%m-%d"), "foo", logger.INFO)<br />
---      config["bar"] = logger.Logger.new(file.new("bar.log", nil, "%LEVEL: %MESSAGE\n"), "bar", logger.INFO)<br />
---      <br />
---      -- The config table must be returned.<br />
---      return config
--- </code><br />
---
--- Then you can load this configuration file "by hand" calling <code>loadConfig(fileName)</code> or you
--- can set a default configuration file using the environment variable <code>LOG4LUA_CONFIG_FILE</code>.
---
--- <h3>Patterns</h3>
--- Patterns may contain the following placeholders:
--- <ul>
---     <li>%DATE - Ingame time</li>
---     <li>%RDATE - Real time</li>
---     <li>%LEVEL</li>
---     <li>%MESSAGE</li>
---     <li>%COUNTRY - Current in game country</li>
---     <li>%FILE - the source filename w/o path</li>
---     <li>%PATH - the source filename including the path</li>
---     <li>%LINE - the position in the source file</li>
---     <li>%FUNCTION - the function name</li>
---     <li>%STACKTRACE - the complete stack trace</li>
---     <li>%ERROR - an exception string like the one you get using pcall(...)</li>
--- </ul>
--- <em>Important performance note:</em> Using one of <code>%FILE, %PATH, %LINE, %FUNCTION, %STACKTRACE</code> implies a quite huge performance
--- hit because <code>debug.traceback()</code> has to be called for every message logged. Note that the default pattern uses these placeholders.
---
--- Default pattern for all appenders is <code>[%DATE] [%LEVEL] [%COUNTRY]: %MESSAGE at %FILE:%LINE(%METHOD)\n</code>
---
--- @author $Author: peter.romianowski $
--- @release $Date: 2008-09-23 08:20:56 +0200 (Di, 23 Sep 2008) $ $Rev: 90 $
----module("log4lua.logger", package.seeall)
 
 -- Class definition
+local skynet = require "skynet"
+
 local Logger = {}
 Logger.__index = Logger
 
@@ -98,6 +35,7 @@ _module.LOG_LEVELS = {
 
 -- Default pattern used for all appenders.
 _module.DEFAULT_PATTERN = "[%DATE] [%LEVEL] [%COUNTRY] %MESSAGE at %FILE:%LINE(%METHOD)\n"
+_module.DEFAULT_PATTERN = "[%DATE] %MESSAGE \n"
 
 -- Name of the environment variable that holds the path to the default config file.
 local ENV_LOGGING_CONFIG_FILE = "LOG4LUA_CONFIG_FILE"
@@ -163,6 +101,20 @@ function _module.loadConfig(fileName)
 		_loggers = {}
         _loggers["ROOT"] = Logger.new(console.new(), "ROOT", _module.INFO)
         _module.getLogger("ROOT"):info("No logging configuration found in file '" .. fileName .. "' (Error: " .. tostring(errorMsg) .. "). Using default (INFO to console).",nil,"chinaness")
+    end
+end
+
+function _module.loadCategory(category,fileobj)
+    if (not category) or (not fileobj) then
+        _loggers = {}
+        _loggers["ROOT"] = Logger.new(console.new(), "ROOT", _module.INFO)
+        _module.getLogger("ROOT"):info("No logging configuration found in file '" .. fileName .. "' (Error: " .. tostring(errorMsg) .. "). Using default (INFO to console).",nil,"chinaness")
+    else
+		-- Default configuration if no config file has been specified or it could not be loaded.
+		if _loggers == nil then
+            _loggers = {}
+        end
+        _loggers[category] = fileobj
     end
 end
 
@@ -258,10 +210,9 @@ function Logger:formatMessage(pattern, level, message, exception, country)
 
 	-- Test CCurrentGameState existance, this script may run from pure LUA without HOI3 bindings
 	local inGameDate = ""
-	if CCurrentGameState ~= nil then
-		inGameDate = CCurrentGameState.GetCurrentDate()
-		inGameDate = tostring(inGameDate:GetYear()) .. "-" .. tostring(inGameDate:GetMonthOfYear()+1) .. "-" .. tostring(inGameDate:GetDayOfMonth()+1)
-	end
+    local timeseconds, millseconds = math.modf(skynet.time())
+    local datestring = os.date("%Y-%m-%d %H:%M:%S", timeseconds)
+    inGameDate = inGameDate..datestring.."."..tostring(math.floor(millseconds*100))
 
     result = string.gsub(result, "%%DATE", inGameDate)
 	result = string.gsub(result, "%%RDATE", tostring(os.date()))

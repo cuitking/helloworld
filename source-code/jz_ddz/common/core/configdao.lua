@@ -10,7 +10,6 @@ local platforms = nil
 local cfgsvrs = nil
 local cfgdbhash = nil
 local cfgclusters = nil
-local keys = {} 
 
 local function get_business_conf(platform, channel, business)
 	if platform == nil or channel == nil or business == nil then
@@ -174,31 +173,7 @@ function ConfigDAO.get_cfgclusters()
 end
 
 function ConfigDAO.reload()
-	skynet.send(".confcenter", "lua", "reload")
-end
-
-function ConfigDAO.set_data(key, value)
-	if key == nil or value == nil then
-		return
-	end
-	skynet.send(".confcenter", "lua", "set", key, value)		
-end
-
-function ConfigDAO.get_data(key)
-	if key == nil then
-		return nil
-	end
-	local status = false
-	local result = nil
-	if keys[key] == nil then
-		--keys[key] = sharedata.query(key)
-		status, result = pcall(sharedata.query, key)
-		if not status then
-			return nil
-		end
-		keys[key] = result 
-	end
-	return keys[key]
+	return skynet.call(".confcenter", "lua", "reload")
 end
 
 return ConfigDAO

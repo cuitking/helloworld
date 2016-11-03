@@ -1,1 +1,1 @@
-agentsessiontimeout=30   --单位s
+session_timeout=30   --单位s

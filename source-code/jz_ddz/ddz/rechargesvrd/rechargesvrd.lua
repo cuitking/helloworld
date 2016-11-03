@@ -1,70 +1,39 @@
 local skynet = require "skynet"
 local filelog = require "filelog"
-local eventmng = require "eventmng"
-local msghelper = require "rechargesvrmsghelper"
-local msgproxy = require "msgproxy"
+local msghelper = require "rechargesvrhelper"
+local serverbase = require "serverbase"
+local base = require "base"
+local table = table
 require "skynet.manager"
 
-local server_id = ...
+local params = ...
 
-local svr_conf
-local RECHARGESVRD = {}
+local Rechargesvrd = serverbase:new({})
 
 
-function  RECHARGESVRD.init()
-
-	msghelper.init(RECHARGESVRD)
-
-	eventmng.init(RECHARGESVRD)
-	eventmng.add_eventbyname("notice", "rechargesvrnoticemsg")
-	eventmng.add_eventbyname("request", "rechargesvrrequestmsg")
-	eventmng.add_eventbyname("cmd", "rechargesvrcmdmsg")
+function Rechargesvrd:tostring()
+	return "Rechargesvrd"
 end
 
-function RECHARGESVRD.send_msgto_client(msg,...)
+local function rechargesvrd_to_sring()
+	return Rechargesvrd:tostring()
 end
 
-function RECHARGESVRD.send_resmsgto_client(msgname, msg, ...)
-end
+function Rechargesvrd:init()
+	msghelper:init(Rechargesvrd)
+	self.eventmng.init(Rechargesvrd)
+	self.eventmng.add_eventbyname("notice", "rechargesvrnotice")
+	self.eventmng.add_eventbyname("request", "rechargesvrrequest")
+	self.eventmng.add_eventbyname("cmd", "rechargesvrcmd")
 
-function RECHARGESVRD.send_noticemsgto_client(msgname, msg, ...)
-end
-
-function RECHARGESVRD.process_client_message(session, source, ...)
-end
-
-function RECHARGESVRD.process_other_message(session, source, ...)
-	eventmng.process(session, source, "lua", ...)
-end
-
-function RECHARGESVRD.decode_client_message(...)
-end
-
-function RECHARGESVRD.set_conf(conf)
-	svr_conf = conf
-end
-
-function RECHARGESVRD.get_conf()
-	return svr_conf
-end
-----------------------------------------------------------------------------------------------------
-function RECHARGESVRD.start()
-
-	--[[skynet.register_protocol {
-		name = "client",
-		id = skynet.PTYPE_CLIENT,
-		unpack = RECHARGESVRD.decode_client_message,
-		dispatch = RECHARGESVRD.process_client_message, 
-	}]]
-
-	skynet.dispatch("lua", RECHARGESVRD.process_other_message)
-
-	--gate = skynet.newservice("wsgate")
-	msgproxy.init()	
+	Rechargesvrd.__tostring = rechargesvrd_to_sring
 end
 
 skynet.start(function()
-	RECHARGESVRD.init()
-	RECHARGESVRD.start()
-	skynet.register(server_id)
+	if params == nil then
+		Rechargesvrd:start()
+	else
+		Rechargesvrd:start(table.unpack(base.strsplit(params, ",")))
+	end
 end)
+

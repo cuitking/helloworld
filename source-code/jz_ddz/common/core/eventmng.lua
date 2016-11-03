@@ -22,7 +22,7 @@ function EventMng.process(session, source, type, msgname,  ...)
 	
 	local f = eventpool[msgname]
 	if f == nil then
-		filelog.sys_error(filename.." [BASIC_EVENTMNG] invalid msgname:"..msgname)		
+		filelog.sys_error(filename.." [BASIC_EVENTMNG] invalid msgname:"..msgname, ...)		
 		return
 	end
 			

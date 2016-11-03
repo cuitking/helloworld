@@ -11,6 +11,7 @@ local params = ...
 
 local Table = serverbase:new({
 	table_data = tableobj:new({
+		cur_watch_playernum = 0,
 		--添加桌子的变量
 		delete_table_timer_id = -1,
 		retain_to_time = 0,    --桌子保留到的时间(linux时间擢)
@@ -26,6 +27,7 @@ local Table = serverbase:new({
 		noputsCardsNum = 0,		---一个出牌回合里,没有出牌的玩家数,不出+1，出牌则置0
 		iswilldelete = 0, 		---在游戏中如果收到删除指令,则置1,游戏结束再处理
 		gamerecords = nil,		----记录战绩
+		ischuntian = 0,         ----是否是春天
 	}),
 
 	logicmng = require("logicmng")

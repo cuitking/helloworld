@@ -1,9 +1,11 @@
 local skynet = require "skynet"
 local filelog = require "filelog"
 local configdao = require "configdao"
---local msgproxy = require "msgproxy"
+local msgproxy = require "msgproxy"
 local timetool = require "timetool"
 local helperbase = require "helperbase"
+local playerdatadao = require "playerdatadao"
+local gamelog = require "gamelog"
 require "enum"
 
 local trace_rids = nil
@@ -39,8 +41,8 @@ function AgentHelper:copy_base_info(baseinfo, info, playgame, money)
     baseinfo.sex = info.sex
 	baseinfo.coins = money.coin
 	baseinfo.diamonds = money.diamond
+	baseinfo.maxcoinnum = money.maxcoinnum
 	baseinfo.highwininseries = playgame.highwininseries
-	baseinfo.maxcoinnum = playgame.maxcoinnum
 end
 
 --判断玩家是否登陆成功
@@ -52,5 +54,78 @@ end
 function AgentHelper:is_logout_success()
 	return  (self.server.state == EGateAgentState.GATE_AGENTSTATE_LOGOUTED) 
 end
+
+function AgentHelper:save_player_gameInfo(rid,key_value_table,reason)
+	local playgame = self.server.playgame
+	if playgame.rid ~= rid or not key_value_table or type(key_value_table) ~= "table" then return end
+	if not key_value_table.totalgamenum or not key_value_table.winnum then return end
+	if key_value_table.totalgamenum == 1 and key_value_table.winnum == 0 then
+		playgame.totalgamenum = playgame.totalgamenum + key_value_table.totalgamenum
+		playgame.wininseriesnum = 0
+	elseif key_value_table.totalgamenum == 1 and key_value_table.winnum == 1 then
+		playgame.totalgamenum = playgame.totalgamenum + key_value_table.totalgamenum
+		playgame.winnum = playgame.winnum + key_value_table.winnum
+		playgame.wininseriesnum = playgame.wininseriesnum + key_value_table.winnum
+		if playgame.wininseriesnum > playgame.highwininseries then
+			playgame.highwininseries = playgame.wininseriesnum
+		end
+	end
+	playerdatadao.save_player_playgame("update",rid,self.server.playgame)
+end
+
+function AgentHelper:save_player_coin(rid,number,reason)
+	local money = self.server.money
+	local beforetotal = money.coin
+	local aftertotal = 0
+	if money.coin + number >= 0 then
+		money.coin = money.coin + number
+		if money.coin > money.maxcoinnum then money.maxcoinnum = money.coin end
+	else
+		money.coin = 0
+	end
+	aftertotal = money.coin
+	playerdatadao.save_player_money("update",rid,self.server.money)
+	gamelog.write_player_coinlog(rid, reason, ECurrencyType.CURRENCY_TYPE_COIN, number, beforetotal, aftertotal)
+end
+
+function AgentHelper:save_player_diamond(rid, number, reason)
+	local money = self.server.money
+	local beforetotal = 0
+	local aftertotal = 0
+	if money.diamond + number >= 0 then
+		money.diamond = money.diamond + number
+	else
+		money.diamond = 0
+	end
+	aftertotal = money.diamond
+	playerdatadao.save_player_money("update",rid,self.server.money)
+	gamelog.write_player_diamondlog(rid, reason, ECurrencyType.CURRENCY_TYPE_DIAMOND, number, beforetotal, aftertotal)
+end
+
+function AgentHelper:save_player_awards(rid, awards, reason)
+	if awards == nil then
+		return
+	end
+
+	for _, award in ipairs(awards) do
+		if award.id == ECurrencyType.CURRENCY_TYPE_COIN then
+			self:save_player_money(rid, award.num, reason)
+		elseif award.id == ECurrencyType.CURRENCY_TYPE_DIAMOND then
+			self:save_player_diamond(rid, award.num, reason)
+		else
+			--TO ADD 操作道具
+		end
+	end	
+end
+
+
+function AgentHelper:update_money_to_roomsvrd(rid, update_table)
+	if self.server.roomsvr_id == "" or self.server.roomsvr_table_id <= 0 then return end
+	if self.server.rid ~= rid or not update_table or #update_table == 0 then return end
+
+	msgproxy.sendrpc_noticemsgto_roomsvrd(nil,self.server.roomsvr_id,self.server.roomsvr_table_id,"update_money",rid,update_table)
+end
+
+
 
 return AgentHelper

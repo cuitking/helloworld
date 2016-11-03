@@ -21,18 +21,19 @@ function TableTimer.process(session, source, event, ...)
 end
 
 function TableTimer.doready(timerid, request)
-	filelog.sys_error("--------------doready outoftime------------------------")
 	local server = msghelper:get_server()
 	local table_data = server.table_data
 	local seat = table_data.seats[request.roomsvr_seat_index]	
 	if seat.rid ~= request.rid then
 		return
 	end
-
 	if timerid ~= seat.ready_timer_id then
 		return
 	end
-
+	if seat.ready_timer_id > 0 then
+		timer.cleartimer(seat.ready_timer_id)
+		seat.ready_timer_id = -1
+	end
 	--将玩家站起
 	seat.ready_to_time = 0
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
@@ -45,8 +46,22 @@ function TableTimer.doaction(timerid, request)
 	if table_data.timer_id ~= timerid then
 		return
 	end
+	if table_data.timer_id > 0 then
+		timer.cleartimer(table_data.timer_id)
+		table_data.timer_id = -1
+	end
 	local seat = table_data.seats[request.roomsvr_seat_index]
-	---if seat.is_tuoguan == 
+	local roomseatlogic = logicmng.get_logicbyname("roomseatlogic")
+	if seat ~= nil then
+		if seat.is_tuoguan == EBOOL.FALSE then
+			seat.timeout_count = seat.timeout_count + 1
+			if seat.timeout_count >= table_data.conf.action_timeout_count then
+				seat.timeout_count = 0
+				roomseatlogic.dealtuoguan(table_data,seat)
+			end
+		end
+	end
+	
 	if request.action_type == EActionType.ACTION_TYPE_MINGPAI or request.action_type == EActionType.ACTION_TYPE_JIAODIZHU then
 		if table_data.action_type == EActionType.ACTION_TYPE_MINGPAI then
 			table_data.state = ETableState.TABLE_STATE_PLAYER_JDZ
@@ -55,16 +70,11 @@ function TableTimer.doaction(timerid, request)
 			return
 		elseif table_data.action_type == EActionType.ACTION_TYPE_JIAODIZHU then
 			table_data.action_type = EActionType.ACTION_TYPE_BUJIAO_DIZHU
-
-			filelog.sys_error("---------------叫地主超时----------------")
 		end
-
 	else
 		
 		local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
-		if roomtablelogic.is_onegameend(table_data)
-			or seat.rid ~= request.rid
-			or table_data.action_type ~= request.action_type then
+		if roomtablelogic.is_onegameend(table_data) or seat.rid ~= request.rid or table_data.action_type ~= request.action_type then
 			return
 		end
 		table_data.timer_id = -1
@@ -75,13 +85,16 @@ function TableTimer.doaction(timerid, request)
 		elseif table_data.action_type == EActionType.ACTION_TYPE_CHUPAI then
 			table_data.action_type = EActionType.ACTION_TYPE_TIMEOUT_CHUPAI
 			----出牌超时,选一张牌出
-			local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 			roomtablelogic.putCards(table_data)
 			table_data.action_type = EActionType.ACTION_TYPE_CHUPAI
 		elseif table_data.action_type == EActionType.ACTION_TYPE_FOLLOW_CHUPAI then
 			----跟牌超时,通知其他玩家，这个玩家不出
-			table_data.action_type = EActionType.ACTION_TYPE_TIMEOUT_FOLLOW_CHUPAI
-			table_data.action_type = EActionType.ACTION_TYPE_CHECK
+			local status = roomtablelogic.followcards(table_data)
+			if status == true then
+				table_data.action_type = EActionType.ACTION_TYPE_FOLLOW_CHUPAI
+			else
+				table_data.action_type = EActionType.ACTION_TYPE_CHECK
+			end
 		end
 	end
 
@@ -116,8 +129,6 @@ function TableTimer.waitstartcountdown(timerid, request)
 		timer.cleartimer(table_data.timer_id)
 		table_data.timer_id = -1
 	end
-	filelog.sys_error("----------waitstartcountdown-------------------")
-
 	local roomgamelogic = msghelper:get_game_logic()
 	roomgamelogic.RiffleandPostCards(table_data)
 end
@@ -129,13 +140,14 @@ function TableTimer.waitmingpai(timerid,request)
 	if table_data.timer_id ~= timerid then
 		return
 	end
+	if table_data.timer_id > 0 then
+		timer.cleartimer(table_data.timer_id)
+		table_data.timer_id = -1
+	end
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 	if roomtablelogic.is_onegameend(table_data) then
 		return
 	end
-
-	table_data.timer_id = -1
-
 	if table_data.state == ETableState.TABLE_STATE_WAIT_CLIENT_ACTION and table_data.action_type == EActionType.ACTION_TYPE_MINGPAI then
 		table_data.state = ETableState.TABLE_STATE_PLAYER_JDZ
 		table_data.action_type = ETableState.ACTION_TYPE_JIAODIZHU
@@ -151,14 +163,14 @@ function TableTimer.outtimejdz(timerid, request)
 	if table_data.timer_id ~= timerid then
 		return
 	end
+	if table_data.timer_id > 0 then
+		timer.cleartimer(table_data.timer_id)
+		table_data.timer_id = -1
+	end
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 	if roomtablelogic.is_onegameend(table_data) then
 		return
 	end
-
-	table_data.timer_id = -1
-
-
 
 end
 ----用于客户端展示牌局游戏结果界面定时器时间到

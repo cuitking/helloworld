@@ -2,6 +2,7 @@ local filelog = require "filelog"
 local msghelper = require "agenthelper"
 local base = require "base"
 local playerdatadao = require "playerdatadao"
+local gamelog = require "gamelog"
 require "enum"
 
 local AgentNotice = {}
@@ -76,60 +77,88 @@ function AgentNotice.other(msgname, noticemsg)
 	msghelper:send_noticemsgto_client(nil, msgname, noticemsg)
 end
 
-function AgentNotice.updategameinfo(rid,iswin,isdz,num,reason)
+function AgentNotice.updateplayerinfo(rid,update_key_value,reason,is_sendto_client)
 	local server = msghelper:get_server()
-	filelog.sys_error("----------updategameinfo---------",rid,iswin,isdz,num,
-		"+++++++++++++++++++",server.playgame)
-	if server.rid ~= rid then
+	if server.rid ~= rid or not update_key_value or type(update_key_value) ~= "table" then
 		return 
-	end
-	if not num or num < 0 then 
-		return 
-	end
-	server.playgame.totalgamenum = server.playgame.totalgamenum + num
-	if iswin == 1 then
-		server.playgame.winnum = server.playgame.winnum + num
-		server.playgame.wininseriesnum = server.playgame.wininseriesnum + num
-		if server.playgame.wininseriesnum > server.playgame.highwininseries then
-			server.playgame.highwininseries = server.playgame.wininseriesnum
-		end
-	elseif iswin == 0 then
-		server.playgame.wininseriesnum = 0
-	end
+    end
+    for key,value in pairs(update_key_value) do
+        if key == "money" then
+            if type(value) == "table" then
+                if value.coin and value.coin ~= 0 then
+                    msghelper:save_player_coin(rid,value.coin,reason)
+                end
+                if value.diamond and value.diamond ~= 0 then
+                    msghelper:save_player_diamond(rid, value.diamond, reason)
+                end
+            end
+        elseif key == "playgame" then
+            if type(value) == "table" then
+                msghelper:save_player_gameInfo(rid, value, reason)
+            end
+        end
+    end
 
-	playerdatadao.save_player_playgame("update",rid,server.playgame)
+    if is_sendto_client == 1 then
+        local responsemsg = {
+            baseinfo = {},
+        }
+        msghelper:copy_base_info(responsemsg.baseinfo, server.info, server.playgame, server.money)
+        msghelper:send_noticemsgto_client(nil,"PlayerBaseInfoNtc",responsemsg)
+    end
 end
 
-
-
-function AgentNotice.updatecurrency(rid,currencyid,number,reason)
+--商城通知发货
+function AgentNotice.delivergood(noticemsg)
 	local server = msghelper:get_server()
-	filelog.sys_error("-----------改变货币in agent---------",rid,currencyid,number,reason)
-	filelog.sys_error(" --------------server----money---",server.money)
-	filelog.sys_error(" --------------server----info-----", server.info)
-	if server.rid ~= rid then
+	if server.rid ~= noticemsg.rid then
 		return
 	end
-	if not (currencyid >= ECurrencyType.CURRENCY_TYPE_COIN and currencyid <= ECurrencyType.CURRENCY_TYPE_DIAMOND) then
+
+	if not msghelper:is_login_success() then
 		return
 	end
-	if currencyid == ECurrencyType.CURRENCY_TYPE_COIN then
-		if server.money.coin + number >= 0 then
-			server.money.coin = server.money.coin + number
-		else
-			server.money.coin = 0
+
+	local order = playerdatadao.query_player_order(noticemsg.rid, noticemsg.order_id)
+	if order == nil then
+		return
+	end
+
+	if not msghelper:is_login_success() then		
+		return
+	end
+
+	if order.state ~= 2 then
+		return
+	end
+	local beforecoin = server.money.coin
+	local beforediamond = server.money.diamond
+	msghelper:save_player_awards(noticemsg.rid, noticemsg.awards, EReasonChangeCurrency.CHANGE_CURRENCY_RECHARGE)
+	order.state = 3
+	--记录发货成功
+	gamelog.write_orderlog(order)
+
+	--修改mysql订单状态
+	playerdatadao.save_player_order("update", order.rid, order, {rid = order.rid, order_id = order.order_id})
+
+	--通知client金币、宝石、道具发生变化
+	--TO ADD
+
+	--如果玩家在桌内游戏，将玩家改变的金币或宝石同步到游戏服
+	if server.roomsvr_id ~= "" and server.roomsvr_table_id > 0 then
+		local aftercoin = server.money.coin
+		local afterdiamond = server.money.diamond
+		local update_table = {}
+		if aftercoin > beforecoin then
+			table.insert(update_table,{id = ECurrencyType.CURRENCY_TYPE_COIN, num = aftercoin - beforecoin})
 		end
-	elseif currencyid == ECurrencyType.CURRENCY_TYPE_DIAMOND then
-		if server.money.diamond + number >= 0 then
-			server.money.diamond = server.money.coin + number
-		else
-			server.money.diamond = 0
+		if afterdiamond > beforediamond then
+			table.insert(update_table,{id = ECurrencyType.CURRENCY_TYPE_DIAMOND, num = afterdiamond - beforediamond})
+		end
+		if #update_table > 0 then
+			msghelper:update_money_to_roomsvrd(server.rid,update_table)
 		end
 	end
-	if server.money.coin > server.playgame.maxcoinnum then
-		server.playgame.maxcoinnum = server.money.coin
-	end
-	playerdatadao.save_player_money("update",rid,server.money)
 end
 
 return AgentNotice

@@ -17,7 +17,7 @@ function TablesvrHelper:sendmsg_to_alltableplayer(msgname, msg, ...)
     local table_data = self.server.table_data
     --通知座位上的玩家
     for _, seat in ipairs(table_data.seats) do
-        if seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER and seat.gatesvr_id ~= "" then
+        if seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER and seat.gatesvr_id ~= "" and seat.is_disconnected == 0 then
             --filelog.sys_protomsg(msgname..":"..seat.rid, "____"..skynet.self().."_game_notice_____", msg)
             msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, msgname, msg, ...)
         end
@@ -32,11 +32,20 @@ function TablesvrHelper:sendmsg_to_alltableplayer(msgname, msg, ...)
 end
 
 function TablesvrHelper:sendmsg_to_tableplayer(seat, msgname, ...)
-    if seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER and seat.gatesvr_id ~= "" then
+    if seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER and seat.gatesvr_id ~= "" and seat.is_disconnected == 0 then
         msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, msgname, ...)
     end
 end
 
+function TablesvrHelper:sendmsg_to_allwaitplayer(msgname, msg, ...)
+    local table_data = self.server.table_data
+    for rid, wait in pairs(table_data.waits) do
+        --filelog.sys_protomsg(msgname..":"..rid, "____"..skynet.self().."_game_notice_____", msg)
+        if wait.gatesvr_id ~= "" then
+            msgproxy.sendrpc_noticemsgto_gatesvrd(wait.gatesvr_id, wait.agent_address, msgname, msg, ...)
+        end
+    end
+end
 function TablesvrHelper:sendmsg_to_waitplayer(wait, msgname, ...)
     if wait.gatesvr_id ~= "" then
         msgproxy.sendrpc_noticemsgto_gatesvrd(wait.gatesvr_id, wait.agent_address, msgname, ...)
@@ -114,7 +123,8 @@ function TablesvrHelper:copy_table_gameinfo(gameinfo)
     gameinfo.min_carry_coin = table_data.conf.min_carry_coin
     gameinfo.max_carry_coin = table_data.conf.max_carry_coin
     gameinfo.base_coin = table_data.conf.base_coin
-    gameinfo.common_times  = table_data.baseTimes
+    gameinfo.common_times  = table_data.conf.common_times
+    gameinfo.all_times = table_data.baseTimes
 
     gameinfo.roomsvr_id = table_data.svr_id
     gameinfo.roomsvr_table_address = skynet.self()        
@@ -122,6 +132,7 @@ function TablesvrHelper:copy_table_gameinfo(gameinfo)
     gameinfo.action_seat_index = table_data.action_seat_index
     gameinfo.action_to_time = table_data.action_to_time
     gameinfo.dz_seat_index = table_data.dz_seat_index
+    gameinfo.action_type = table_data.action_type
 
     gameinfo.seats = {}
     gameinfo.tableplayerinfos = {}
@@ -254,6 +265,5 @@ function TablesvrHelper:copy_playerinfoingameend(playerendinfos)
         table.insert(playerendinfos,playerendinfo)
     end
 end
-
 
 return  TablesvrHelper

@@ -1,3 +1,4 @@
+
 local math = math
 local pairs = pairs
 local ipairs = ipairs
@@ -214,7 +215,6 @@ local CardRuler = {
             if CardsKey[CardsObject[1]+1] == nil or CardsKey[CardsObject[2]+1] == nil then
                 return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
             end
-            filelog.sys_error("----------判断王炸---------",CardsValue[CardsObject[1]+1],CardsValue[CardsObject[2]+1])
             if not ((CardsValue[CardsObject[1]+1] == 16 and CardsValue[CardsObject[2]+1] == 17) or (CardsValue[CardsObject[1]+1] == 17 and CardsValue[CardsObject[2]+1] == 16)) then
                 return false, ECardType.DDZ_CARD_TYPE_UNKNOWN
             end
@@ -469,7 +469,6 @@ local CardRuler = {
                     if flag == false then table.insert(mainValue,CardsValue[CardsObject[i]+1]) end
                 end
             end
-            filelog.sys_error("----------------mainValue ----DDZ_CARD_TYPE_THREE_WING_ONE",mainValue)
             table.sort(mainValue,function(a,b) return a>b end)
             for i = 1,#mainValue do
                 local flag = true
@@ -800,21 +799,210 @@ end
 function DDZGameLogic.SortCards(cards)
     CardHelper:sortCards(cards)
 end
+
+function DDZGameLogic.extract(cards)
+    local count = 0
+    local container = {
+        single = {},
+        pair   = {},
+        three  = {},
+        sitiao = {}
+    }
+    for i = 1,#cards do
+        for m = 1,#cards do
+            if CardsValue[cards[i]+1] == CardsValue[cards[m]+1] then
+                count = count + 1
+            end
+        end
+        if count == 1 then
+            table.insert(container.single,cards[i])
+        elseif count == 2 then
+            table.insert(container.pair,cards[i])
+        elseif count == 3 then
+            table.insert(container.three,cards[i])
+        elseif count == 4 then
+            table.insert(container.sitiao,cards[i])
+        end
+        count = 0
+    end
+    for key,value in pairs(container) do
+        CardHelper:sortCards(value)
+    end
+    return container
+end
+
+function DDZGameLogic.getBiggerCards(container,m_keyMaxValue,m_nLen)
+    local cardsre = {}
+    if not container then return false end
+    if m_nLen <= 1 then
+        if not container.single or #container.single == 0 then return false end
+        for i = #container.single,1,-1 do
+            if CardsValue[container.single[i]+1] > m_keyMaxValue then
+                table.insert(cardsre,container.single[i])
+                return true, cardsre
+            end
+        end 
+    elseif m_nLen == 2 then
+        if not container.pair or #container.pair == 0 then return false end
+        for i = #container.pair,1,-1 do
+            if CardsValue[container.pair[i]+1] > m_keyMaxValue then
+                for m = 1,m_nLen do
+                    table.insert(cardsre,container.pair[i-m+1])
+                end
+                return true, cardsre
+            end
+        end
+    elseif m_nLen == 3 then
+        if not container.three or #container.three == 0 then return false end
+        for i = #container.three,1,-1 do
+            if CardsValue[container.three[i]+1] > m_keyMaxValue then
+                for m = 1, m_nLen do
+                    table.insert(cardsre,container.three[i-m+1])
+                end
+                return true, cardsre
+            end
+        end
+    elseif m_nLen == 4 then
+        if not container.sitiao or #container.sitiao == 0 then return false end
+        for i = #container.sitiao,1,-1 do
+            if CardsValue[container.sitiao[i]+1] > m_keyMaxValue then
+                for m = 1, m_nLen do
+                    table.insert(cardsre,container.sitiao[i-m+1])
+                end
+                return true, cardsre
+            end
+        end
+    end
+    return false
+end
+
+---@ 从container中取一组辅牌, 单牌/对子/三条;
+---@ container = {single:{},pair:{},three:{},sitiao:{}}
+---@ len:1/2/3, 单牌/对子/三条, 类型长度;
+---@ excludes: 需要排除的数值,
+---@ return false,nil (true, recards)
+function DDZGameLogic.getSubCards(container, len, excludes)
+    -- body
+    local recards = {}
+    if not container or len <= 0 then return false end
+    if len == 1 then
+        local hastwojk = false
+        if #container.single <= 0 then 
+            return false 
+        elseif #container.single >=2 then
+            if CardsValue[container.single[1]+1] >=16 and CardsValue[container.single[2]+1] >= 16 then hastwojk = true end
+        end
+        for k = #container.single,1,-1 do
+            if hastwojk then
+                if CardsValue[container.single[k]+1] < 16 then
+                    table.insert(recards,container.single[k])
+                    return true, recards
+                end
+            else
+                table.insert(recards,container.single[k])
+                return true, recards
+            end
+        end
+    elseif len == 2 then
+        if #container.pair == 0 then return false end
+        for k = #container.pair,1,-1 do
+            for m = 1,len do
+                table.insert(recards,container.pair[k-m+1])
+            end
+            return true, recards
+        end
+    elseif len == 3 then
+
+    end
+    return false 
+end
+
+----根据上一家玩家出的牌,从手牌中筛选出能大得过上一家的牌
+----@@ cards 手牌 playercards 上一家玩家出的牌 isfindbomb 是否找炸弹
+function DDZGameLogic.getCardsbyCardType(cards, playercards, isfindbomb)
+    if playercards.m_eCardType == nil or playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_UNKNOWN 
+        or playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_ROCKET then
+        return false
+    end
+    local cardscontainer = DDZGameLogic.extract(cards)
+    if playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_SINGLE then
+        local status, recards = DDZGameLogic.getBiggerCards(cardscontainer,playercards.m_keyMaxValue,playercards.m_nLen)
+        if status == true then
+            return true, recards
+        else
+            return false
+        end
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_PAIR then
+        local status, recards = DDZGameLogic.getBiggerCards(cardscontainer,playercards.m_keyMaxValue,playercards.m_nLen)
+        if status == true then
+            return true, recards
+        else
+            return false
+        end
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_THREE then
+        local status, recards = DDZGameLogic.getBiggerCards(cardscontainer,playercards.m_keyMaxValue,playercards.m_nLen)
+        if status == true then
+            return true, recards
+        else
+            return false
+        end
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_BOMB then
+        local status, recards = DDZGameLogic.getBiggerCards(cardscontainer,playercards.m_keyMaxValue,playercards.m_nLen)
+        if status == true then
+            return true, recards
+        else
+            return false
+        end
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_ONE_STRAIGHT then
+
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_TWO_STRAIGHT then
+
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_THREE_STRAIGHT then
+
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_THREE_ONE then
+        if playercards.m_nLen ~= 4 then return false end
+        local status, recards = DDZGameLogic.getBiggerCards(cardscontainer,playercards.m_keyMaxValue,3)
+        if status == true then
+            local substatus,subrecards = DDZGameLogic.getSubCards(cardscontainer, 1, recards)
+            if substatus == true then
+                for k,v in ipairs(subrecards) do
+                    table.insert(recards, v)
+                end
+                return true, recards
+            else
+                return false
+            end
+        else
+            return false
+        end    
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_THREE_PAIR then
+        if playercards.m_nLen ~= 5 then return false end
+        local status, recards = DDZGameLogic.getBiggerCards(cardscontainer,playercards.m_keyMaxValue,3)
+        if status == true then
+            local substatus, subrecards = DDZGameLogic.getSubCards(cardscontainer, 2, recards)
+            if substatus == true then
+                for k,v in ipairs(subrecards) do
+                    table.insert(recards, v)
+                end
+                return true, recards
+            else
+                return false
+            end
+        else
+            return false
+        end
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_THREE_WING_PAIR then
+
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_FOUR_TWO_ONE then
+
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_FOUR_TWO_PAIR then
+
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_SOFTBOMB then
+
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_TIANBOMB then
+
+    end  
+    return false 
+end
+
 return DDZGameLogic
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

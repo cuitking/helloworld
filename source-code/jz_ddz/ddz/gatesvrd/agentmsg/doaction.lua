@@ -77,7 +77,7 @@ function  Doaction.process(session, source, fd, request)
 	if not msghelper:is_login_success() then
 		return
 	end
-	filelog.sys_error("test doaction ___jdz", responsemsg)
+
 	if responsemsg == nil then
 		responsemsg = {
 			errcode = EGateAgentState.ERR_INVALID_REQUEST,

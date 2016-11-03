@@ -1,5 +1,5 @@
 #!/bin/bash
-source texasgamedb.env
+source ddzgamedb.env
 
 IN_FILE=altertable.sql
 OUT_FILE=/tmp/altertable.sql.out

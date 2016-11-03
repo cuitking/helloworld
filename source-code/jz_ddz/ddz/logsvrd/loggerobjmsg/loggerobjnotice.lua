@@ -1,14 +1,8 @@
---
--- Created by IntelliJ IDEA.
--- User: juzhong
--- Date: 2016/10/11
--- Time: 17:38
--- To change this template use File | Settings | File Templates.
---
 
 local filelog = require "filelog"
 local msghelper = require "loggerobjhelper"
 local base = require "base"
+local configdao = require "configdao"
 require "enum"
 
 local LoggerobjNotice = {}
@@ -20,11 +14,6 @@ function LoggerobjNotice.process(session, source, event, ...)
     end
     f(...)
 end
-
-function LoggerobjNotice.testlogserver(logglevel)
-    filelog.sys_error("-------------test--------",logglevel)
-end
-
 
 return LoggerobjNotice
 

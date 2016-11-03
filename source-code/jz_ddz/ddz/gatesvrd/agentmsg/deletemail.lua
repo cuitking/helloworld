@@ -34,10 +34,9 @@ function  Deletemail.process(session, source, fd, request)
 		msghelper:send_resmsgto_client(fd, "DeleteMailRes", responsemsg)		
 		return
 	end
-	filelog.sys_error("-----delete-mails-------",request.mail_key)
-	local condition = "delete from role_mailinfos where mail_key='"..tostring(request.mail_key).."'"
+	local condition = "where mail_key='"..tostring(request.mail_key).."'"
 	filelog.sys_error("=============delete  mails======",condition)
-	playerdatadao.query_player_mail(server.rid,condition)
+	playerdatadao.save_player_mail("delete",server.rid,nil,condition)
 	responsemsg.mail_key = request.mail_key
 
 	msghelper:send_resmsgto_client(fd, "DeleteMailRes", responsemsg)

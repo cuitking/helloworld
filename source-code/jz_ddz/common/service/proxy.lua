@@ -40,7 +40,10 @@ function Proxy.request(node, address, ...)
 end
 
 function Proxy.notice(node, address, ...)
-  base.pcall(cluster.call, node, ".proxy", "local_notice", nil, address, ...)
+  local status, err = pcall(cluster.call, node, ".proxy", "local_notice", nil, address, ...)
+  if not status then
+    filelog.sys_error("Proxy.notice", err)
+  end
 end
 
 function Proxy.local_request(_, address, ...)
@@ -54,8 +57,11 @@ function Proxy.local_request(_, address, ...)
 end
 
 function Proxy.local_notice(_, address, ...)
-  base.skynet_retpack(nil)
-  base.pcall(skynet.send, address, "lua", ...) 
+  base.skynet_retpack(true)
+  local status, err = pcall(skynet.send, address, "lua", ...)
+  if not status then
+    filelog.sys_error("Proxy.local_notice ", err)
+  end 
 end
 
 function Proxy.start()
@@ -65,7 +71,7 @@ skynet.dispatch("lua", function(_, _, cmd, node, address, ...)
 		--statisticsmng.stat_service_mqlen(svr_id)
 	  local f = Proxy[cmd]
 		if f ~= nil then
-        base.pcall(f, node, address, ...)
+        f(node, address, ...)
     else
         filelog.sys_error(filename.." [BASIC_PROXY] skynet.dispatch invalid func "..cmd)
     end

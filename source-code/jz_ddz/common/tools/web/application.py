@@ -12,7 +12,7 @@ tornado.web.RequestHandler.write_error = write_error
 
 @tornado.gen.coroutine
 def runsh(shell):
-    proc = tornado.process.Subprocess("eval 'source server.env; cd $PROJECTROOT/$PROJECTDIR;" + shell +"'", shell=True,
+    proc = tornado.process.Subprocess("eval 'source ./server.env; cd $PROJECTROOT/$PROJECTDIR;" + shell +"'", shell=True,
         stdin=tornado.process.Subprocess.STREAM,
         stdout=tornado.process.Subprocess.STREAM,
         stderr=tornado.process.Subprocess.STREAM)

@@ -5,6 +5,7 @@ local timer = require "timer"
 local filelog = require "filelog"
 local logicmng = require "logicmng"
 local ddzgamelogic = require "ddzgamelogic"
+local gamelog = require "gamelog"
 require "enum"
 local RoomGameLogic = {}
 --[[
@@ -85,14 +86,13 @@ function RoomGameLogic.waitstartcountdown(gameobj)
 		tableobj.timer_id = -1
 	end
 	-----启动开始倒计时定时器，在定时器超时函数中处理发牌逻辑
-	tableobj.timer_id = timer.settimer(5*100, "waitstartcountdown", startcountdownmsg)
+	tableobj.timer_id = timer.settimer(3*100, "waitstartcountdown", startcountdownmsg)
 
 	tableobj.state = ETableState.TABLE_STATE_WAIT_COUNT_DOWN
 end
 
 ----发完牌后开启定时器等待玩家明牌
 function RoomGameLogic.waitmingpai(gameobj)
-	filelog.sys_error("RoomGameLogic.waitmingpai")
 	local tableobj = gameobj.tableobj
 
 
@@ -104,14 +104,13 @@ function RoomGameLogic.waitmingpai(gameobj)
 		tableobj.timer_id = -1
 	end
 	-----启动开始倒计时定时器
-	tableobj.timer_id = timer.settimer(8*100, "doaction", mingpaimsg)
+	tableobj.timer_id = timer.settimer(2*100, "doaction", mingpaimsg)
 
 	tableobj.state = ETableState.TABLE_STATE_WAIT_CLIENT_ACTION
 end
 
 ----明牌阶段后进入叫地主阶段
 function RoomGameLogic.playerjdz(gameobj)
-	filelog.sys_error("RoomGameLogic.playerjdz")
 	local tableobj = gameobj.tableobj
 	local seatIndex = base.get_random(1,#tableobj.seats)
 	local action_seat_index = seatIndex
@@ -127,7 +126,6 @@ function RoomGameLogic.playerjdz(gameobj)
 		action_to_time = tableobj.action_to_time,
 		action_type = EActionType.ACTION_TYPE_JIAODIZHU
 	}
-	---filelog.sys_error("  ------tongzhiwanjia-----jiaodizhu ------",doactionntcmsg, "-------os.time----------",os.time())
 	----通知所有玩家 seatIndex上的玩家在叫地主了
 	msghelper:sendmsg_to_alltableplayer("DoactionNtc", doactionntcmsg)
 
@@ -137,10 +135,14 @@ function RoomGameLogic.playerjdz(gameobj)
 	end
 
 	local jdzouttimemsg = {
-		action_type = EActionType.ACTION_TYPE_JIAODIZHU
+		action_type = EActionType.ACTION_TYPE_JIAODIZHU,
+		roomsvr_seat_index = action_seat_index,
 	}
-	tableobj.timer_id = timer.settimer(tableobj.conf.action_timeout*100, "doaction", jdzouttimemsg)
-	----tableobj.timer_id = timer.settimer(30*100, "outtimejdz", jdzouttimemsg)
+	if tableobj.seats[tableobj.action_seat_index].is_tuoguan == EBOOL.TRUE then
+		tableobj.timer_id = timer.settimer(ETuoguanDelayTime.TUOGUAN_DELAY_TIME*100, "doaction", doactionntcmsg)
+	else
+		tableobj.timer_id = timer.settimer(tableobj.conf.action_timeout*100, "doaction", doactionntcmsg)
+	end
 	----切换桌子状态
 	tableobj.state = ETableState.TABLE_STATE_WAIT_PLAYER_JDZ
 end
@@ -148,7 +150,6 @@ end
 -----玩家出牌游戏开始
 function RoomGameLogic.chupai(gameobj)
 	local tableobj = gameobj.tableobj
-	filelog.sys_error("RoomGameLogic.onegamestart",tableobj.dz_seat_index)
 	if tableobj.timer_id > 0 then
 		timer.cleartimer(tableobj.timer_id)
 		tableobj.timer_id = -1
@@ -169,7 +170,6 @@ function RoomGameLogic.chupai(gameobj)
 		table.insert(tableobj.seats[tableobj.dz_seat_index].cards, v) ---将剩余的三张底牌加入地主的手牌中
 	end
 	tableobj.ddzgame.SortCards(tableobj.seats[tableobj.dz_seat_index].cards)
-	---filelog.sys_error("------------post--deep---cards-----------",DealCardsEndmsg,"===================",tableobj.seats)
 	msghelper:sendmsg_to_alltableplayer("DealCardsEndNtc", DealCardsEndmsg)
 
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
@@ -187,12 +187,13 @@ function RoomGameLogic.chupai(gameobj)
 		action_to_time = tableobj.action_to_time,
 		action_type = tableobj.action_type
 	}
-	---filelog.sys_error("  ------gaosuwanjia onegamestart ------",doactionntcmsg)
 	----通知所有玩家 seatIndex上的玩家在出牌了
 	msghelper:sendmsg_to_alltableplayer("DoactionNtc", doactionntcmsg)
-
-	tableobj.timer_id = timer.settimer(tableobj.conf.action_timeout*100, "doaction", doactionntcmsg)
-
+	if tableobj.seats[tableobj.action_seat_index].is_tuoguan == EBOOL.TRUE then
+		tableobj.timer_id = timer.settimer(ETuoguanDelayTime.TUOGUAN_DELAY_TIME*100, "doaction", doactionntcmsg)
+	else
+		tableobj.timer_id = timer.settimer(tableobj.conf.action_timeout*100, "doaction", doactionntcmsg)
+	end
 	tableobj.state = ETableState.TABLE_STATE_WAIT_CLIENT_ACTION
 end
 
@@ -217,8 +218,10 @@ function RoomGameLogic.continue(gameobj)
 	if tableobj.action_type == EActionType.ACTION_TYPE_CHUPAI or tableobj.action_type == EActionType.ACTION_TYPE_FOLLOW_CHUPAI or
 		tableobj.action_type == EActionType.ACTION_TYPE_CHECK then
 		if tableobj.action_type ~= EActionType.ACTION_TYPE_CHECK and #tableobj.CardsHeaps > 0 then
+			if tableobj.action_type == EActionType.ACTION_TYPE_FOLLOW_CHUPAI and tableobj.ischuntian == 1 then
+				tableobj.ischuntian = 0
+			end
 			local roundheaps = tableobj.CardsHeaps[#tableobj.CardsHeaps]
-			---filelog.sys_error("----------roundheaps---------",roundheaps,"---------------",tableobj.CardsHeaps)
 			for k,v in ipairs(roundheaps[#roundheaps].cardHelper) do
 				table.insert(noticemsg.cards,v)
 			end
@@ -231,7 +234,6 @@ function RoomGameLogic.continue(gameobj)
 	roomseatlogic.setSeatstate(tableobj)
 	-- TO ADD操作类型
 
-	---filelog.sys_error("   ----------------DoactionResultNtc------------",noticemsg)
 	msghelper:sendmsg_to_alltableplayer("DoactionResultNtc", noticemsg)
 
 	local is_end_game = false
@@ -282,7 +284,6 @@ function RoomGameLogic.continue(gameobj)
 			----玩家不叫地主或叫地主超时
 			seat.jdztag = -1  ----表示当前玩家已经叫过地主了
 			tableobj.noputsCardsNum = tableobj.noputsCardsNum + 1
-			---filelog.sys_error("------不叫地主-----",tableobj.noputsCardsNum)
 			---尾家不叫地主
 			if tableobj.jzdbegin_index == next_action_index and tableobj.seats[tableobj.action_seat_index].jdztag < 0 and
 					((tableobj.seats[next_action_index].jdztag == 1 and tableobj.seats[next_action_index_next].jdztag < 0) or
@@ -318,7 +319,6 @@ function RoomGameLogic.continue(gameobj)
 					roomtablelogic.setdizhu(tableobj,next_action_index)
 					return
 				else
-					---filelog.sys_error(" 通知下一家玩家抢地主 ",tableobj.action_seat_index,next_action_index)
 					tableobj.action_seat_index = next_action_index
 					tableobj.action_type = EActionType.ACTION_TYPE_QIANGDIZHU
 				end
@@ -344,7 +344,6 @@ function RoomGameLogic.continue(gameobj)
 				return
 			elseif tableobj.seats[next_action_index].jdztag == 1 then
 				---通知下一家玩家抢地主
-				---filelog.sys_error("------通知下一家玩家抢地主-----",next_action_index,tableobj.action_seat_index,next_action_index_next)
 				tableobj.action_seat_index = next_action_index
 				tableobj.action_type = EActionType.ACTION_TYPE_QIANGDIZHU
 			elseif tableobj.seats[next_action_index].jdztag < 0 then
@@ -361,10 +360,8 @@ function RoomGameLogic.continue(gameobj)
 				tableobj.action_type = EActionType.ACTION_TYPE_QIANGDIZHU
 			end
 		end
-		---filelog.sys_error(" -------不叫地主的玩家数---------",tableobj.noputsCardsNum)
 		if tableobj.noputsCardsNum >= 3 then
 			----玩家都不叫地主，重新发牌
-			---filelog.sys_error("-------------------玩家都不叫地主，重新发牌---------------",tableobj.noputsCardsNum)
 			roomtablelogic.noonejdz(tableobj)
 			return
 		end
@@ -383,7 +380,6 @@ function RoomGameLogic.continue(gameobj)
 		elseif tableobj.action_type == EActionType.	ACTION_TYPE_FOLLOW_CHUPAI then
 			tableobj.noputsCardsNum = 0
 		end
-		---filelog.sys_error(" 出牌或者跟牌,或者让牌后",tableobj.action_seat_index,next_action_index,tableobj.noputsCardsNum,tableobj.action_type)
 		tableobj.action_seat_index = next_action_index
 	end
 
@@ -395,7 +391,12 @@ function RoomGameLogic.continue(gameobj)
 		action_type = tableobj.action_type,
 		action_to_time = tableobj.action_to_time,
 	}
-	---filelog.sys_error(" doacton boardcost DoactionNtc ===",doactionntcmsg," tableobj .state === ",tableobj.state)
+	if tableobj.action_type == EActionType.ACTION_TYPE_CHUPAI then
+		if tableobj.seats[tableobj.action_seat_index].handsround == 0 then
+			tableobj.ischuntian = 1
+		end
+		tableobj.seats[tableobj.action_seat_index].handsround = tableobj.seats[tableobj.action_seat_index].handsround + 1
+	end
 	msghelper:sendmsg_to_alltableplayer("DoactionNtc", doactionntcmsg)
 	if tableobj.seats[tableobj.action_seat_index].is_tuoguan == EBOOL.TRUE then
 		tableobj.timer_id = timer.settimer(ETuoguanDelayTime.TUOGUAN_DELAY_TIME*100, "doaction", doactionntcmsg)
@@ -411,12 +412,11 @@ function RoomGameLogic.continue_and_standup(gameobj)
 end
 
 function RoomGameLogic.continue_and_leave(gameobj)
-	filelog.sys_error("RoomGameLogic.continue_and_leave")
+	
 end
 
 
 function RoomGameLogic.onegameend(gameobj)
-	filelog.sys_error("RoomGameLogic.onegameend=====")
 	-- body
 	local tableobj = gameobj.tableobj
 
@@ -424,6 +424,7 @@ function RoomGameLogic.onegameend(gameobj)
 		timer.cleartimer(tableobj.timer_id)
 		tableobj.timer_id = -1
 	end
+	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 	----通知玩家游戏结束了
 	if tableobj.action_type == EActionType.ACTION_TYPE_CHUPAI or tableobj.action_type == EActionType.ACTION_TYPE_FOLLOW_CHUPAI then
 		local dizhuiswin = 0
@@ -440,8 +441,12 @@ function RoomGameLogic.onegameend(gameobj)
 				v.win = ( dizhuiswin==1 ) and 1 or 0
 			end
 		end
+		---判断是否是春天
+		if tableobj.ischuntian == 1 then
+			tableobj.baseTimes = tableobj.baseTimes * 2
+			roomtablelogic.sendHandsInfo(tableobj)
+		end
 		----结果结算逻辑处理部分
-		local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 		roomtablelogic.balancegame(tableobj)
 		local GameEndResultNtcmsg = {
 			basecoins = tableobj.conf.base_coin,
@@ -451,12 +456,14 @@ function RoomGameLogic.onegameend(gameobj)
 		GameEndResultNtcmsg.playerinfos = {}
 		msghelper:copy_playerinfoingameend(GameEndResultNtcmsg.playerinfos)
 		msghelper:sendmsg_to_alltableplayer("GameEndResultNtc", GameEndResultNtcmsg)
+		gamelog.write_table_records(tableobj.conf.id,tableobj.conf.room_type,tableobj.conf.base_coin,tableobj.baseTimes,
+			tableobj.conf.create_user_rid,GameEndResultNtcmsg.playerinfos)
 	end
 	local gameendmsg = {
 
 	}
 	---设置定时器，用于客户端展示牌局游戏结果界面
-	tableobj.timer_id = timer.settimer(2*100, "onegameend", gameendmsg)
+	tableobj.timer_id = timer.settimer(3*100, "onegameend", gameendmsg)
 	---切换桌子状态为等待定时器结束
 	local roomseatlogic = logicmng.get_logicbyname("roomseatlogic")
 	for k,value in ipairs(tableobj.seats) do
@@ -466,7 +473,6 @@ function RoomGameLogic.onegameend(gameobj)
 end
 
 function RoomGameLogic.onegamerealend(gameobj)
-	filelog.sys_error("RoomGameLogic.onegamerealend")
 	-- body
 	local tableobj = gameobj.tableobj
 
@@ -499,19 +505,19 @@ function RoomGameLogic.onegamerealend(gameobj)
 			v.ready_timer_id = timer.settimer(tableobj.conf.ready_timeout*100, "doready", outoftimermsg)
 		end
 	end
+	RoomGameLogic.onegamestart_inittable(gameobj)
 	tableobj.state = ETableState.TABLE_STATE_WAIT_ALL_READY
 end
 
 function RoomGameLogic.gameend(gameobj)
 	local tableobj = gameobj.tableobj
-	filelog.sys_error("RoomGameLogic.gameend")
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 	----重置桌子状态为等待玩家准备开始游戏的状态
 	roomtablelogic.resetTable(tableobj)
 end
 
 function RoomGameLogic.onsitdowntable(gameobj, seat)
-	filelog.sys_error("RoomGameLogic.onsitdowntable")
+	
 end
 
 function RoomGameLogic.is_ingame(gameobj, seat)
@@ -538,6 +544,7 @@ function RoomGameLogic.onegamestart_inittable(gameobj)
 	tableobj.noputsCardsNum = 0
 	tableobj.iswilldelete = 0
 	tableobj.nojdznums = 0
+	tableobj.ischuntian = 0
 	if tableobj.timer_id >= 0 then
 		timer.cleartimer(tableobj.timer_id)
 		tableobj.timer_id = -1
@@ -545,7 +552,6 @@ function RoomGameLogic.onegamestart_inittable(gameobj)
 end
 
 function RoomGameLogic.standup_clear_seat(gameobj, seat)
-	filelog.sys_error("RoomGameLogic.standup_clear_seat")
 	local roomseatlogic = logicmng.get_logicbyname("roomseatlogic")
 	roomseatlogic.clear_seat(seat)
 end

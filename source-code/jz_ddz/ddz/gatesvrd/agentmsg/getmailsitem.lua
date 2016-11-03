@@ -43,7 +43,7 @@ function  Getmailsitem.process(session, source, fd, request)
 
 	local status
 	local mails
-	local condition = " where mail_key = '" .. request.mail_key .. "'"
+	local condition = " select * from role_mailinfos where mail_key = '" .. request.mail_key .. "'"
 
 	status, mails = playerdatadao.query_player_mail(server.rid,condition)
 
@@ -53,7 +53,7 @@ function  Getmailsitem.process(session, source, fd, request)
 		msghelper:send_resmsgto_client(fd, "GetmailItemsRes", responsemsg)		
 		return
 	end
-	filelog.sys_error("----------getitems---------",mails)
+	
 	if mails[1].isattach == 1 then
 		local mailscontent = json.decode(mails[1].content)
 		local items
@@ -64,14 +64,33 @@ function  Getmailsitem.process(session, source, fd, request)
 			 mailscontent.awards = {}
 		end
 		mails[1].content = tabletool.deepcopy(mailscontent)
-		playerdatadao.save_player_mail("delete",server.rid, mails[1],condition)
+		condition = "where mail_key = '" .. request.mail_key .. "'"
+		playerdatadao.save_player_mail("delete",server.rid, nil,condition)
 		responsemsg.mail_key = mails[1].mail_key
 		responsemsg.resultdes = ""
 		if items then
 			responsemsg.resultdes = responsemsg.resultdes..json.encode(items)
 		end
+		if #items> 0 then
+			for k,v in ipairs(items) do
+				if v.id == ECurrencyType.CURRENCY_TYPE_COIN then
+					server.money.coin = server.money.coin + v.num
+				elseif v.id == ECurrencyType.CURRENCY_TYPE_DIAMOND then
+					server.money.diamond = server.money.diamond + v.num
+				end
+			end
+			playerdatadao.save_player_money("update",server.rid,server.money)
+		end
+
+		local CurrencyinfoNtcmsg = {
+			coins = 0,
+			diamonds = 0
+		}
+		CurrencyinfoNtcmsg.coins = server.money.coin
+		CurrencyinfoNtcmsg.diamonds = server.money.diamond
 		filelog.sys_error("---------------GetmailItemsRes-------------",responsemsg)
 		msghelper:send_resmsgto_client(fd, "GetmailItemsRes", responsemsg)
+		msghelper:send_resmsgto_client(fd, "CurrencyinfoNtc", CurrencyinfoNtcmsg)
 		return 
 	end
 

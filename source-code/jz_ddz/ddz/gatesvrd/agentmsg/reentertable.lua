@@ -55,7 +55,7 @@ function  ReenterTable.process(session, source, fd, request)
 		msghelper:send_resmsgto_client(fd, "ReenterTableRes", responsemsg)		
 		return		
 	end
- 	filelog.sys_error("--------------------ReenterTable----------------",server.roomsvr_id,request.roomsvr_id,server.roomsvr_id,server.roomsvr_table_address)
+ 	filelog.sys_error("--------------------ReenterTable----------------",server.roomsvr_id,request.roomsvr_id,request.roomsvr_table_address,server.roomsvr_table_address)
 	if server.roomsvr_id ~= request.roomsvr_id 
 		or server.roomsvr_table_address ~= request.roomsvr_table_address then
 		responsemsg.errcode = EErrCode.ERR_INVALID_PARAMS
