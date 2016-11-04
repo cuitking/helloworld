@@ -109,7 +109,7 @@ function AgentNotice.updateplayerinfo(rid,update_key_value,reason,is_sendto_clie
 end
 
 --商城通知发货
-function AgentNotice.delivergood(noticemsg)
+function AgentNotice.delivergoods(noticemsg)
 	local server = msghelper:get_server()
 	if server.rid ~= noticemsg.rid then
 		return
@@ -159,6 +159,9 @@ function AgentNotice.delivergood(noticemsg)
 			msghelper:update_money_to_roomsvrd(server.rid,update_table)
 		end
 	end
+	--通知client 发货
+	noticemsg.rid = nil
+	msghelper:send_noticemsgto_client(nil, "DeliverGoodNtc", noticemsg)
 end
 
 return AgentNotice

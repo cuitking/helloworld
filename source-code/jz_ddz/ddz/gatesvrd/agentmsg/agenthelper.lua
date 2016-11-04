@@ -109,7 +109,7 @@ function AgentHelper:save_player_awards(rid, awards, reason)
 
 	for _, award in ipairs(awards) do
 		if award.id == ECurrencyType.CURRENCY_TYPE_COIN then
-			self:save_player_money(rid, award.num, reason)
+			self:save_player_coin(rid, award.num, reason)
 		elseif award.id == ECurrencyType.CURRENCY_TYPE_DIAMOND then
 			self:save_player_diamond(rid, award.num, reason)
 		else
@@ -122,7 +122,6 @@ end
 function AgentHelper:update_money_to_roomsvrd(rid, update_table)
 	if self.server.roomsvr_id == "" or self.server.roomsvr_table_id <= 0 then return end
 	if self.server.rid ~= rid or not update_table or #update_table == 0 then return end
-
 	msgproxy.sendrpc_noticemsgto_roomsvrd(nil,self.server.roomsvr_id,self.server.roomsvr_table_id,"update_money",rid,update_table)
 end
 

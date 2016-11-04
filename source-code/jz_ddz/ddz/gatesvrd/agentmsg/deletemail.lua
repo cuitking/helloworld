@@ -34,8 +34,24 @@ function  Deletemail.process(session, source, fd, request)
 		msghelper:send_resmsgto_client(fd, "DeleteMailRes", responsemsg)		
 		return
 	end
-	local condition = "where mail_key='"..tostring(request.mail_key).."'"
-	filelog.sys_error("=============delete  mails======",condition)
+
+	local status
+	local mails
+	local condition = " select * from role_mailinfos where mail_key = '" .. request.mail_key .. "'"
+	status, mails = playerdatadao.query_player_mail(server.rid,condition)
+	if status == true or #mails == 0 then
+		responsemsg.errcode = EErrCode.ERR_INVALID_REQUEST
+		responsemsg.errcodedes = "无效的邮件!"
+		msghelper:send_resmsgto_client(fd, "DeleteMailRes", responsemsg)
+		return
+	end
+	if mails[1].isattach == 1 then
+		responsemsg.errcode = EErrCode.ERR_INVALID_REQUEST
+		responsemsg.errcodedes = "邮件有附件,请领取后删除!"
+		msghelper:send_resmsgto_client(fd, "DeleteMailRes", responsemsg)
+		return
+	end
+	condition = "where mail_key='"..tostring(request.mail_key).."'"
 	playerdatadao.save_player_mail("delete",server.rid,nil,condition)
 	responsemsg.mail_key = request.mail_key
 

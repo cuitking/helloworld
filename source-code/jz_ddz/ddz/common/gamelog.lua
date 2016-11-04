@@ -108,4 +108,20 @@ function GameLog.write_orderlog(order)
 	msgproxy.sendrpc_noticemsgto_logsvrd("addlogtologsvr", "orderlog", data)
 end
 
+--- 领取邮件附件流水日志
+-- @param rid
+--
+function GameLog.write_getmailitem_log(rid,gettime, mail_key, create_time, reason, mailcontent)
+	local data = {
+		rid = rid,
+		mail_key = mail_key,
+		create_time = create_time,
+		reason = reason,
+		gettime = gettime,
+		mailcontent = mailcontent,
+	}
+	msgproxy.sendrpc_noticemsgto_logsvrd("addlogtologsvr", "getmailitemlog",data)
+end
+
+
 return GameLog

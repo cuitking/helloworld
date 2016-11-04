@@ -37,5 +37,19 @@ logscfg = {
 		begin_id = 140000,
 		num = 1,
 	},
+	orderlogcfg = {
+	    logsname = "orderlog",
+	    logspath = logrootpath .. "/orderlog",
+	    splitfilesize = 250*4096,
+	    begin_id = 150000,
+	    num = 1,
+	},
+	getmailitemlogcfgs = {
+	    logsname = "getmailitemlog",
+	    logspath = logrootpath .. "/getmailitemlog",
+	    splitfilesize = 250*4096,
+        begin_id = 160000,
+        num = 1,
+	},
 }
 

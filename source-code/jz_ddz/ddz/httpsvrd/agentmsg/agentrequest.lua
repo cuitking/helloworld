@@ -124,7 +124,7 @@ function AgentRequest.callback(client_fd)
 		    			info={},
 		    		]]
 		    		local rechargeresponse 
-		    		rechargeresponse = msgproxy.sendrpc_reqmsgto_rechargesvrd("delivergood", orderinfo)
+		    		rechargeresponse = msgproxy.sendrpc_reqmsgto_rechargesvrd("delivergoods", orderinfo)
 		    		
 		    		if rechargeresponse==nil then
 		    			result = -1
@@ -290,7 +290,7 @@ function AgentRequest.generate_params(request, rechargeconf)
 
 	local f = channelinfo.paramsfunc
 	local params = f(request, rechargeconf, channelinfo)
-	filelog.sys_info("AgentRequest.generate_params", params)
+	--filelog.sys_info("AgentRequest.generate_params", params)
 	base.skynet_retpack(params)
 end
 

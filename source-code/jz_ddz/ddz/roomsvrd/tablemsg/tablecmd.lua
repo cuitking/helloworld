@@ -5,6 +5,7 @@ local msgproxy = require "msgproxy"
 local base = require "base"
 local logicmng = require "logicmng"
 local timetool = require "timetool"
+local tabletool = require "tabletool"
 local timer = require "timer"
 local filename = "tablecmd.lua"
 require "enum"
@@ -63,11 +64,15 @@ function TableCMD.reload(conf)
 	local table_data = server.table_data
 	if conf.version <= table_data.conf.version then
 		return
-	end 
-
+	end
+	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 	--TO ADD 添加reload操作
 	---判断桌子是否在游戏中,如果是在游戏中，这将配置文件缓存
-
+	if not roomtablelogic.is_gameend(table_data) then
+		table_data.backofconf = tabletool.deepcopy(conf)
+		return
+	end
+	table_data.conf = tabletool.deepcopy(conf)
 end
 
 function TableCMD.delete(...)

@@ -87,7 +87,6 @@ function  Getmails.process(session, source, fd, request)
 											return first.create_time > second.create_time
 											end )
 	end
-	--filelog.sys_error("------------GetMailsRes-----------",responsemsg)
     msghelper:send_resmsgto_client(fd, "GetMailsRes", responsemsg)
 end
 

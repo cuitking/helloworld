@@ -953,8 +953,8 @@ function DDZGameLogic.getCardsbyCardType(cards, playercards, isfindbomb)
         else
             return false
         end
-    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_ONE_STRAIGHT then
-
+    elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_ONE_STRAIGHT then ---顺子
+        
     elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_TWO_STRAIGHT then
 
     elseif playercards.m_eCardType == ECardType.DDZ_CARD_TYPE_THREE_STRAIGHT then

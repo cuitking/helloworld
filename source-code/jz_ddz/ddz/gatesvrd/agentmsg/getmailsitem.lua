@@ -4,7 +4,9 @@ local msghelper = require "agenthelper"
 local processstate = require "processstate"
 local playerdatadao = require "playerdatadao"
 local tabletool = require "tabletool"
+local timetool = require "timetool"
 local tostring = tostring
+local gamelog = require "gamelog"
 local json = require "cjson"
 require "enum"
 
@@ -57,40 +59,30 @@ function  Getmailsitem.process(session, source, fd, request)
 	if mails[1].isattach == 1 then
 		local mailscontent = json.decode(mails[1].content)
 		local items
+		local gettime = timetool.get_time()
+		gamelog.write_getmailitem_log(server.rid, gettime, mails[1].mail_key, mails[1].create_time, mails[1].reason, mails[1].content)
 		if mailscontent.isattach == true then
 			 mailscontent.isattach = false
 			 mails[1].isattach = 0
-			 items = tabletool.deepcopy(mailscontent.awards)
-			 mailscontent.awards = {}
 		end
 		mails[1].content = tabletool.deepcopy(mailscontent)
-		condition = "where mail_key = '" .. request.mail_key .. "'"
-		playerdatadao.save_player_mail("delete",server.rid, nil,condition)
 		responsemsg.mail_key = mails[1].mail_key
 		responsemsg.resultdes = ""
-		if items then
-			responsemsg.resultdes = responsemsg.resultdes..json.encode(items)
+		if mailscontent.awards then
+			responsemsg.resultdes = responsemsg.resultdes..json.encode(mailscontent.awards)
 		end
-		if #items> 0 then
-			for k,v in ipairs(items) do
-				if v.id == ECurrencyType.CURRENCY_TYPE_COIN then
-					server.money.coin = server.money.coin + v.num
-				elseif v.id == ECurrencyType.CURRENCY_TYPE_DIAMOND then
-					server.money.diamond = server.money.diamond + v.num
-				end
-			end
-			playerdatadao.save_player_money("update",server.rid,server.money)
+		if #mailscontent.awards> 0 then
+			msghelper:save_player_awards(server.rid,mailscontent.awards,EReasonChangeCurrency.CHANGE_CURRENCY_GETITEM_FROM_MAIL)
 		end
-
-		local CurrencyinfoNtcmsg = {
-			coins = 0,
-			diamonds = 0
-		}
-		CurrencyinfoNtcmsg.coins = server.money.coin
-		CurrencyinfoNtcmsg.diamonds = server.money.diamond
-		filelog.sys_error("---------------GetmailItemsRes-------------",responsemsg)
+		mailscontent.awards = {}
+		condition = "where mail_key = '" .. request.mail_key .. "'"
+		playerdatadao.save_player_mail("delete",server.rid, nil,condition)
 		msghelper:send_resmsgto_client(fd, "GetmailItemsRes", responsemsg)
-		msghelper:send_resmsgto_client(fd, "CurrencyinfoNtc", CurrencyinfoNtcmsg)
+		local responsemsg = {
+			baseinfo = {},
+		}
+		msghelper:copy_base_info(responsemsg.baseinfo, server.info, server.playgame, server.money)
+		msghelper:send_noticemsgto_client(nil,"PlayerBaseInfoNtc",responsemsg)
 		return 
 	end
 

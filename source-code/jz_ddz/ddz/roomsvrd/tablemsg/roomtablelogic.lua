@@ -694,6 +694,11 @@ end
 function RoomTableLogic.resetTable(tableobj)
 	if tableobj.iswilldelete == 1 then
 		msghelper:event_process("lua", "cmd", "delete","gameover")
+		return
+	end
+	if tableobj.backofconf ~= nil then
+		tableobj.conf = tabletool.deepcopy(tableobj.backofconf)
+		tableobj.backofconf = nil
 	end
 	tableobj.state = ETableState.TABLE_STATE_GAME_START
 	tableobj.action_type =  0			---玩家当前操作类型

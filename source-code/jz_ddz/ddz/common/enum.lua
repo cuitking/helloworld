@@ -200,6 +200,7 @@ EReasonChangeCurrency = {
 	CHANGE_CURRENCY_SYSTEM_GAME = 1, --系统桌结算
 	CHANGE_CURRENCY_FRIEND_TABLE =2, --朋友桌结算
 	CHANGE_CURRENCY_RECHARGE = 3, --商城充值
+	CHANGE_CURRENCY_GETITEM_FROM_MAIL = 4, ---领取邮件附件
 }
 
 ---倍数配置

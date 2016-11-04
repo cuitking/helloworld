@@ -1,4 +1,5 @@
-table_conf_list_1 = {
+return {
+{
     begin_id = 10100,
     num  = 50,    
     conf = {
@@ -16,10 +17,8 @@ table_conf_list_1 = {
         common_times = 15,            --公共倍数
         ready_timeout = 30,
     }
-}
-
-
-table_conf_list_2 = {
+},
+{
     begin_id   = 10200,
     num  = 50,    
     conf = {
@@ -37,9 +36,8 @@ table_conf_list_2 = {
         common_times = 15,            --公共倍数
         ready_timeout = 30,
     }
-}
-
-table_conf_list_3 = {
+},
+{
     begin_id  = 10300,
     num  = 50,    
     conf = {
@@ -57,9 +55,8 @@ table_conf_list_3 = {
         common_times = 15,            --公共倍数
         ready_timeout = 30,
     }
-}
-
-table_conf_list_4 = {
+},
+{
     begin_id  = 10400,
     num  = 50,    
     conf = {
@@ -77,8 +74,8 @@ table_conf_list_4 = {
         common_times  = 15,       --公共倍数
         ready_timeout = 30,
     }
-}
-table_conf_list_5 = {
+},
+{
     begin_id  = 10500,
     num  = 50,
     conf = {
@@ -96,4 +93,5 @@ table_conf_list_5 = {
         common_times  = 15,       --公共倍数
         ready_timeout = 30,
     }
+}
 }

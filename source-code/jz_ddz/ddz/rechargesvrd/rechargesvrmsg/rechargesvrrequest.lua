@@ -109,6 +109,7 @@ local function ios_recharge(request, responsemsg)
 
 	local awards = {}
 	local result = true
+	local isrecordlog = false
 	for i, award in pairs(rechargeitem.awards) do
 		awards[i]={}
 		awards[i].id = award.id
@@ -122,6 +123,7 @@ local function ios_recharge(request, responsemsg)
 	order.price = rechargeitem.price
 	if order.state == nil then
 		order.create_time = timetool.get_time()
+		isrecordlog = true
 	end
 	order.state = 2
 	result = playerdatadao.save_player_order("sync_insert", request.rid, order, nil)
@@ -132,15 +134,17 @@ local function ios_recharge(request, responsemsg)
 	end
 
 	--记录订单流水
-	gamelog.write_orderlog(order)
+	if isrecordlog then
+		gamelog.write_orderlog(order)
+	end
 
 	responsemsg.order_id = order.order_id
 
-	local delivergoodmsg = {}
-	delivergoodmsg.awards = rechargeitem.awards
-	delivergoodmsg.rid = request.rid
-	delivergoodmsg.order_id = order.order_id
-	msgproxy.sendrpc_noticemsgto_gatesvrd(request.gatesvr_id, request.agent_address, "delivergood", delivergoodmsg)
+	local delivergoodsmsg = {}
+	delivergoodsmsg.awards = rechargeitem.awards
+	delivergoodsmsg.rid = request.rid
+	delivergoodsmsg.order_id = order.order_id
+	msgproxy.sendrpc_noticemsgto_gatesvrd(request.gatesvr_id, request.agent_address, "delivergoods", delivergoodsmsg)
 	return responsemsg, 0
 end
 
@@ -306,7 +310,7 @@ orderinfo={
 	price = ,
 }
 --]]
-function RechargesvrRequest.delivergood(orderinfo)
+function RechargesvrRequest.delivergoods(orderinfo)
 	--[[
 		errcode,  0表示成功，非0表示失败
 		info={},
@@ -362,13 +366,13 @@ function RechargesvrRequest.delivergood(orderinfo)
 	base.skynet_retpack(reshttpsvrdmsg)
 
 	--通知agent发货
-	local delivergoodmsg = {}
+	local delivergoodsmsg = {}
 	local _, online = playerdatadao.query_player_online(order.rid)
 	if online and online.gatesvr_id ~= "" then
-		delivergoodmsg.awards = json.decode(order.good_awards)
-		delivergoodmsg.rid = order.rid
-		delivergoodmsg.order_id = order.order_id
-		msgproxy.sendrpc_noticemsgto_gatesvrd(online.gatesvr_id, online.gatesvr_service_address, "delivergood", delivergoodmsg)
+		delivergoodsmsg.awards = json.decode(order.good_awards)
+		delivergoodsmsg.rid = order.rid
+		delivergoodsmsg.order_id = order.order_id
+		msgproxy.sendrpc_noticemsgto_gatesvrd(online.gatesvr_id, online.gatesvr_service_address, "delivergoods", delivergoodsmsg)
 	end
 end
 

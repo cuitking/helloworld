@@ -27,7 +27,7 @@ local function tabletostring(table)
 				cache[v] = new_key
 				tinsert(temp,"" .. key .. _dump(v,space .. (next(t,k) and "|" or " " ).. srep(" ",#key),new_key))
 			else
-				tinsert(temp,"" .. key .. "=" .. tostring(v).." ")
+				tinsert(temp,"## " .. key .. "=" .. tostring(v).."")
 			end
 		end
 		return tconcat(temp," "..space)

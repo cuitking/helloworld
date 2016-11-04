@@ -28,6 +28,7 @@ local Table = serverbase:new({
 		iswilldelete = 0, 		---在游戏中如果收到删除指令,则置1,游戏结束再处理
 		gamerecords = nil,		----记录战绩
 		ischuntian = 0,         ----是否是春天
+		backofconf = nil,       ----缓存更新的配置文件
 	}),
 
 	logicmng = require("logicmng")
