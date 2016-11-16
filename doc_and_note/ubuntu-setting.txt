@@ -288,6 +288,9 @@ rpm  -e  xxxxx
 mysql> set password for ‘root’@‘localhost’ = password('root');
 mysql> exit
 
+-------centos 编译升级gcc-6.2-----------------
+http://www.cnblogs.com/highway-9/p/5628852.html
+http://www.cnblogs.com/oloroso/p/5984985.html
 
 
 
