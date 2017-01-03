@@ -53,6 +53,26 @@ show dbs; 显示数据库
 use <db_name> ;切换数据库  // use GameConfig-hf;
 
 
+----------------mongodb允许远程访问--------------------
+http://ju.outofmemory.cn/entry/150644
+1.绑定ip
+vim /etc/mongod.conf
+默认情况下,MongoDB绑定到本地接口,它将限制远程连接。如果你不关心安全,只是注释掉接受任何远程连接(不推荐)。
+
+---------------------------------------
+查询course表中，存在lectures_count字段的记录信息
+
+db.course.find( { "lectures.lectures_count": { $exists: true } } )
+删除course表中，所有的lectures.lectures_count字段
+
+db.course.update({},{$unset:{"lectures.lectures_count":""}},{multi:true})
+根据条件往表里插入一个字段
+
+db.lecture.update({"course_id":"5352d5ab92fc7705666ae8c9"},{$set:{"file_type":"PDF"}},{multi:true})
+查询某个字段（pps_base）
+
+db.album.find({"_id" : NumberLong(200068901)},{"pps_base":true})
+
 
 
 

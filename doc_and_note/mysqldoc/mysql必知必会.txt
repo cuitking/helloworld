@@ -9,3 +9,26 @@
 1.任意两行都不具有相同值 2.每个行都必须具有一个主键值(主键列不允许NULL值)
 
 
+
+----------msyql 开启远程访问--------
+一、本篇主要记录，mysql如何开启远程访问(用户远程访问授权)，mysql数据库开启远程访问。
+二、mysql如何添加用户，并且授权用户访问某数据库的权限，请查看：《Mysql新建用户和数据库并授权》。
+方法：
+一、首先要确保防火墙开放3306端口。
+二、改表法：
+1、更改“mysql” 数据库里的“user” 表里的 “host” 项，从“localhost”改称“%”
+x:\>mysql -u root -pvmware
+mysql> use mysql;
+mysql> update user set host = ‘%’ where user = ‘root’;
+mysql> select host, user from user;
+mysql> flush privileges;
+2、刷新权限
+mysql> flush privileges;
+三、授权法：
+1、使myuser使用mypassword从任何主机连接到mysql服务器任何数据库
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'myuser'@'%' IDENTIFIED BY 'mypassword' WITH GRANT OPTION;
+2、允许用户myuser从ip为192.168.1.3的主机连接到mysql服务器，并使用mypassword作为密码
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'myuser'@'192.168.1.3' IDENTIFIED BY 'mypassword’ WITH GRANT OPTION;
+这里主要推荐使用授权法，最好参照《Mysql新建用户和数据库并授权》新建数据库和用户，并且授权访问单个数据库
+（注意：以上*.*是授权访问全部数据库权限，“DBNAME.*”为指定数据库权限，DBNAME为要授权的数据库名），而不是使用root权限。
+
