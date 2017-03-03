@@ -1,3 +1,8 @@
-------------redis 做mq----------
+1------------redis 做mq----------
 http://blog.arganzheng.me/posts/a-simple-message-queue-with-redis.html
+
+
+2删除redis 缓存制定key
+redis-cli keys "*" | xargs redis-cli del
+
 
