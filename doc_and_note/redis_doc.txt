@@ -6,3 +6,12 @@ http://blog.arganzheng.me/posts/a-simple-message-queue-with-redis.html
 redis-cli keys "*" | xargs redis-cli del
 
 
+yum -y install pcre-devel zlib-devel openssl-devel
+cd /tmp
+wget http://nginx.org/download/nginx-1.11.3.tar.gz
+tar zxf nginx-1.11.3.tar.gz 
+cd nginx-1.11.3
+./configure --sbin-path=/usr/bin --conf-path=/etcinxinx.conf --pid-path=ar/localinxinx.pid --with-http_ssl_module --with-pcre
+make
+make install
+

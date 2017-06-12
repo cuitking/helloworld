@@ -293,6 +293,99 @@ http://www.cnblogs.com/highway-9/p/5628852.html
 http://www.cnblogs.com/oloroso/p/5984985.html
 
 
+-----
+
+第一步 让内网映射机能无密码登陆到外网机上。
+
+第二步 在主机的ssd_config中设置： GatewayPorts yes
+ssh -fNT -g -R 6888:localhost:10000 106.75.7.48
+
+注意：一个比较隐秘，小众的设置GatewayPorts，默认sshd_config 里面是 No 的,  
+不设置这个， 只能 telnet localhost  (telnet 127.0.0.1)
+
+ssh -fNT -R 9999:localhost:10000 106.75.8.87
+
+nohup ssh -fNT -R 6999:localhost:6999  180.150.179.208 &
+
+
+nohup ssh -fNT -R 6999:localhost:6999  180.150.179.208 &
+
+
+------源码下载编译nginx
+yum -y install pcre-devel zlib-devel openssl-devel
+cd /tmp
+wget http://nginx.org/download/nginx-1.11.3.tar.gz
+tar zxf nginx-1.11.3.tar.gz 
+cd nginx-1.11.3
+./configure --sbin-path=/usr/bin --conf-path=/etc/nginx/nginx.conf --pid-path=/var/local/nginx/nginx.pid --with-http_ssl_module --with-pcre
+make
+make install
+
+---------shell  字符串处理-------------
+http://qjpcpu.github.io/blog/2014/02/14/shellzi-fu-chuan-chu-li/
+
+
+----------修改单进程最大链接数---------
+vi /etc/security/limits.conf，添加如下的行:
+
+*   soft noproc   11000  
+*   hard noproc   11000  
+*   soft nofile   4100  
+*   hard nofile   4100 
+2. ulimit -n ****    ***为修改的链接数
+
+
+---------centos 7 关闭防火墙--------
+1、关闭防火墙：sudo systemctl stop firewalld.service
+2、关闭开机启动：sudo systemctl disable firewalld.service
+3、安装iptables防火墙
+执行以下命令安装iptables防火墙：sudo yum install iptables-services
+4、配置iptables防火墙，打开指定端口（具体跟以前版本一样，网上介绍很多，这里不多介绍了）
+5. 设置iptables防火墙开机启动：sudo systemctl enable iptables
+-------------------------------------
+# uname -a   # 查看内核/操作系统/CPU信息 
+# cat /etc/issue 
+# cat /etc/redhat-release # 查看操作系统版本 
+# cat /proc/cpuinfo  # 查看CPU信息 
+# grep MemTotal /proc/meminfo # 查看内存总量
+# hostname   # 查看计算机名 
+# lspci -tv   # 列出所有PCI设备 
+# lsusb -tv   # 列出所有USB设备 
+# lsmod    # 列出加载的内核模块 
+# env    # 查看环境变量
+
+---------
+安装Connector/Python：
+
+# wget http://cdn.MySQL.com/Downloads/Connector-Python/mysql-connector-python-1.0.11.zip
+# unzip mysql-connector-python-1.0.11.zip
+# cd mysql-connector-python-1.0.11 
+# python setup.py install
+
+测试Connector/Python是否装上：
+
+>>> from distutils.sysconfig import get_python_lib
+>>> print get_python_lib()
+/usr/local/lib/python2.7/site-packages
+
+
+----------------
+解决无法找到 /usr/bin/ld: cannot find -ldl
+使用源码编译glibc
+http://www.sysnote.org/2015/08/25/use-new-glibc/
+
+解决无法找到 /usr/bin/ld: cannot find -lstdc++
+yum install libstdc++-static
+
+
+
+
+
+
+
+
+
+
 
 
 
