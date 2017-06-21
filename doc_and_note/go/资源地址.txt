@@ -6,3 +6,5 @@ https://github.com/astaxie/build-web-application-with-golang/blob/master/zh/01.0
 windows vscode
 http://studygolang.com/articles/6204
 
+go 语言学习笔记
+https://www.kancloud.cn/xiaohuamao/golang

@@ -378,6 +378,14 @@ http://www.sysnote.org/2015/08/25/use-new-glibc/
 yum install libstdc++-static
 
 
+--------------
+question：ImportError: No module named requests
+down vote
+It's not obvious to me which version of Python you are using.
+If it's Python 3, a solution would be pip3 install requests
+
+
+
 
 
 
