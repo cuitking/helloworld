@@ -85,5 +85,78 @@ Go语言中,使用大小写来决定该常量,变量，类型，接口，结构�
 根据约定， 函数名首字母小写即为private
 函数名首字母大写 即为public
 
+常量定义,常量组
+const (
+	PI = 3.14
+	const1 = "1"
+	)
+全局变量,var 组只能声明全局变量，不可以在函数体内使用
+var (
+	name = "gopher"
+	name1 = "gopher1"
+)
+一般类型声明
+type newType int
+结构声明
+type gopher struct{}
+接口的声明
+type golang interface{}
+
+三 类型与变量
+
+Go基本类型
+bool: 长度1字节,取值范围:true, false
+注意事项:不可以使用数字代表true或false
+整型：int/uint
+根据运行平台可能是32位或64位
+字节型:byte(uint8别名)
+32位整型:int32(rune)/uint32
+浮点型:float32(精确到7位小数点)/float64(15位小数点)
+足够保存指针的32位或64位整数型:uintptr
+其他值类型: array, struct, string
+引用类型:slice, map, chan(用于并发)
+接口类型:interface
+函数类型:func
+
+类型零值
+零值并不等于空值,而是当变量被声明为某种类型后的默认值，通常情况下值类型的默认值为0,
+bool为false, string为空字符串.
+类型别名
+type (
+	文本 string
+)
+func main() {
+	var b 文本
+	b = "文本类型"
+}
+
+单个变量的声明与赋值
+变量的声明格式: var 变量名称 变量类型
+变量的赋值: 变量名称 = 表达式
+声明同时赋值: var 变量名 变量类型 = 表达式
+var a int
+a = 123
+var b int= 321
+var c = 321
+d := 456(全局变量不可以使用)
+
+多个变量的声明与赋值
+全局变量的声明可以使用var()的方式进行简写
+全局变量的声明不可以省略var,但可以使用并行方式
+所有变量口可以使用类型推断
+局部变量不可以使用var()的方式简写,只能使用并行方式
+var a,b,c,d = 1,2,3,4
+
+变量的类型转换
+go中不存在隐式转换,所有类型转换必须显示声明
+转换只能发生在两种相互兼容的类型之间
+类型转换的格式:
+<ValueA> [:] = <TypeOfValueA>(<ValueB>)
+var a float32 = 1.1
+b := int(a)
+
+四 常量与运算符
+
+
 
 
