@@ -16,4 +16,15 @@ func main() {
 	s3 := make([]int, 3, 10)
 	fmt.Println("s3---------")
 	fmt.Println(s3)
+	fmt.Println(len(s3), cap(s3))
+
+	sa := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'}
+	ssa := sa[2:5]
+	sb := ssa[3:5]
+	fmt.Println("ssa---", string(ssa))
+	fmt.Println("sb----", string(sb))
+	alen := len(sa)
+
+	sacopy := sa[0:alen]
+	fmt.Println("sacopy---", string(sacopy))
 }
