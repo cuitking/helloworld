@@ -351,8 +351,18 @@ Go函数不支持嵌套,重载和默认参数
 函数也可以作为一种类型使用
 
 
+///闭包
+func closure(x int) func(int) int {
+	return func(y int) int {
+		return x + y
+	}
+}
 
-
+//调用闭包
+	fmt.Println("-----调用闭包-------")
+	f := closure(10)
+	fmt.Println(f(1))
+	fmt.Println(f(2))
 
 
 
