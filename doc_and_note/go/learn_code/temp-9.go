@@ -25,6 +25,40 @@ func main() {
 	f := closure(10)
 	fmt.Println(f(1))
 	fmt.Println(f(2))
+
+	fmt.Println("a")
+
+	defer fmt.Println("b")
+	defer fmt.Println("c")
+
+	for i := 0; i < 3; i++ {
+		///defer fmt.Println("i", i)
+		defer func() {
+			fmt.Println(i)
+		}()
+	}
+
+	fmt.Println("-------------")
+	AA()
+	BB()
+	CC()
+
+	//////////////////////////////////
+	var fs = [4]func(){}
+
+	for i := 0; i < 4; i++ {
+		defer fmt.Println("defer-----", i)
+		defer func() {
+			fmt.Println("defer_closure i = ", i)
+		}()
+		fs[i] = func() {
+			fmt.Println("closure i===", i)
+		}
+	}
+
+	for _, f := range fs {
+		f()
+	}
 }
 
 // func A(a ...int) {
@@ -33,6 +67,23 @@ func main() {
 // 	fmt.Println(a)
 
 // }
+
+func AA() {
+	fmt.Println("func aa")
+}
+
+func BB() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Recover in B")
+		}
+	}()
+	panic("panic in BB")
+}
+
+func CC() {
+	fmt.Println(" ----func C-----")
+}
 
 func A(s []int) {
 	s[0] = 5
@@ -48,7 +99,9 @@ func B() {
 
 ///闭包
 func closure(x int) func(int) int {
+	fmt.Println(" %p", &x)
 	return func(y int) int {
+		fmt.Println(" %p", &x)
 		return x + y
 	}
 }
