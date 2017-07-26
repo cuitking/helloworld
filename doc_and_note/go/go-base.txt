@@ -399,11 +399,59 @@ Go中的struct与c中的struct非常相似，并且Go没有class
 嵌入结构作为匿名字段看起来像继承，但不是继承
 可以使用匿名字段指针
 
+type person struct {
+	Name string
+	Age  int
+}
+
+a := person{}
+	a.Name = "joe"
+	a.Age = 30
+a := person{
+	Name: "joe",
+	Age: 22,
+}
+
+a := &person{
+	Name: "joe",
+	Age:  22,
+}
+a.Name = "fuckaaa" //完全兼容指针类型和值类型 == *a.Name
+
+//匿名结构体
+b := &struct {
+	Name string
+	Age  int
+}{
+	Name: "jacke",
+	Age:  99,
+}
+
+//组合
+type human struct {
+	Sex int
+}
+type teacher struct {
+	human
+	Name string
+	Age  int
+}
+d := teacher{Name: "joaaa", Age: 9, human: human{Sex: 2}}
+d.Sex = 13
+
+11 方法method
 
 
 
+func main() {
+	fmt.Println("-----------11. method-----------")
+	a := A{}
+	a.Print()
+}
 
-
+func (a A) Print() {
+	fmt.Println("A")
+}
 
 
 
