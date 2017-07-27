@@ -498,6 +498,12 @@ func (a *AZ) Increase(num int) {
 
 13 反射reflection
 
+反射可大大提高程序的灵活性，使得interface{}有更大的发挥余地
+反射使用Typeof和Valueof函数从接口中获取目标对象信息
+反射会将匿名字段作为独立字段
+想要利用反射修改对象状态，前提是interface.data是settable,即pointer-interface
+通过反射可以动态调用方法
+
 
 
 
