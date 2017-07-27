@@ -440,8 +440,17 @@ d := teacher{Name: "joaaa", Age: 9, human: human{Sex: 2}}
 d.Sex = 13
 
 11 方法method
-
-
+Go中虽没有class，依旧有method
+通过显式说明receiver来实现与某个类型的组合
+只能为同一个包中的类型定义方法
+Receiver可以是类型的值或者指针
+不存在方法重载
+可以使用值或指针来调用方法，编译器会自动完成转换
+从某种意义上来说，方法是函数的语法糖，因为receiver其实就是方法
+所接收的第1个参数()
+如果外部结构和嵌入结构存在同名方法，则优先调用外部结构的方法
+类型别名不会拥有底层类型所附带的方法
+方法可以调用结构中的非公开字段
 
 func main() {
 	fmt.Println("-----------11. method-----------")
@@ -453,6 +462,38 @@ func (a A) Print() {
 	fmt.Println("A")
 }
 
+var aa AZ
+aa.Print()
+(*AZ).Print(&aa) //两种调用方式等同
+
+func (a *AZ) Print() {
+	fmt.Println("show -----az print")
+}
+
+type AZ int
+
+var ac AZ
+	ac = 1
+	ac.Increase(100)
+	fmt.Println("-----ac------", ac)
+func (a *AZ) Increase(num int) {
+	*a += AZ(num)
+	fmt.Println("-----a--------", a)
+}
+
+12 接口interface
+接口是一个或多个方法签名的集合
+只要某个类型拥有该接口的所有方法签名，即算实现该接口，无需显式
+声明实现了哪个接口，这称为structural Typing
+接口只有方法声明，没有实现，没有数据字段
+接口可以匿名嵌入其它接口，或嵌入到结构中
+将对象赋值给接口时，会发生拷贝，而接口内部存储的是指向这个复制品的指针，
+既无法修改复制品的状态，也无法获取指针
+只有当接口存储的类型和对象都为nil时，接口才等于nil
+接口调用不会做receiver的自动转换
+接口同样支持匿名字段方法
+接口也可实现类似oop中的多太
+空接口可以作为任何类型数据的容器
 
 
 
