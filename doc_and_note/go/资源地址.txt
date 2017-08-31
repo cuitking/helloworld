@@ -19,3 +19,8 @@ https://github.com/astaxie/build-web-application-with-golang/blob/master/zh/pref
 
 配置go语言工具(sublime text2)
 https://my.oschina.net/Obahua/blog/110767
+
+websocketd实战
+http://www.cnblogs.com/tinywan/p/6826125.html
+
+
