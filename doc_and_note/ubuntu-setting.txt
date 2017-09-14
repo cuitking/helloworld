@@ -391,6 +391,85 @@ down vote
 It's not obvious to me which version of Python you are using.
 If it's Python 3, a solution would be pip3 install requests
 
+------ubuntu 设置静态ip上网
+编辑interfaces文件，该文件位于/etc/network/下，执行如下命令：
+vim /etc/network/interfaces
+
+# The primary network interface
+auto eth0
+iface eth0 inet static
+address 192.168.1.100
+netmask 255.255.255.0
+gateway 192.168.1.1
+
+vim /etc/resolvconf/resolv.conf.d/base
+nameserver 192.168.1.1
+nameserver 61.138.2.69
+
+-------
+tcpdump是linux命令行下常用的的一个抓包工具，记录一下平时常用的方式，测试机器系统是ubuntu 12.04。
+
+tcpdump的命令格式
+
+tcpdump的参数众多，通过man tcpdump可以查看tcpdump的详细说明，这边只列一些笔者自己常用的参数：
+
+tcpdump [-i 网卡] -nnAX '表达式'
+各参数说明如下：
+
+-i：interface 监听的网卡。
+-nn：表示以ip和port的方式显示来源主机和目的主机，而不是用主机名和服务。
+-A：以ascii的方式显示数据包，抓取web数据时很有用。
+-X：数据包将会以16进制和ascii的方式显示。
+表达式：表达式有很多种，常见的有：host 主机；port 端口；src host 发包主机；dst host 收包主机。多个条件可以用and、or组合，取反可以使用!，更多的使用可以查看man 7 pcap-filter。
+下面进行一些命令测试，如果没有权限，可以先切换成root用户。
+
+监听网卡eth0
+
+$ tcpdump -i eth0
+这个方式最简单了，但是用处不多，因为基本上只能看到数据包的信息刷屏，压根看不清，可以使用ctrl+c中断退出，如果真有需求，可以将输出内容重定向到一个文件，这样也更方便查看。
+
+监听指定协议的数据
+
+$ tcpdump -i eth0 -nn 'icmp'
+
+linux使用tcpdump抓包示例
+
+每一行的各个数据表示的含义：
+
+抓到包的时间 IP 发包的主机和端口 > 接收的主机和端口 数据包内容
+监听指定的主机
+
+$ tcpdump -i eth0 -nn 'host 192.168.1.231'
+这样的话，192.168.1.231这台主机接收到的包和发送的包都会被抓取。
+
+$ tcpdump -i eth0 -nn 'src host 192.168.1.231'
+这样只有192.168.1.231这台主机发送的包才会被抓取。
+
+$ tcpdump -i eth0 -nn 'dst host 192.168.1.231'
+这样只有192.168.1.231这台主机接收到的包才会被抓取。
+
+监听指定端口
+
+$ tcpdump -i eth0 -nnA 'port 80'
+上例是用来监听主机的80端口收到和发送的所有数据包，结合-A参数，在web开发中，真是非常有用。
+
+监听指定主机和端口
+
+$ tcpdump -i eth0 -nnA 'port 80 and src host 192.168.1.231'
+多个条件可以用and，or连接。上例表示监听192.168.1.231主机通过80端口发送的数据包。
+
+监听除某个端口外的其它端口
+
+$ tcpdump -i eth0 -nnA '!port 22'
+如果需要排除某个端口或者主机，可以使用“!”符号，上例表示监听非22端口的数据包。
+
+
+
+
+
+
+
+
 
 
 
