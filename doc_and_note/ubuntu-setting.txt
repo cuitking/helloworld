@@ -488,6 +488,12 @@ $ tcpdump -i eth0 -nnA 'port 80 and src host 192.168.1.231'
 
 $ tcpdump -i eth0 -nnA '!port 22'
 如果需要排除某个端口或者主机，可以使用“!”符号，上例表示监听非22端口的数据包
+
+
+
+
+------centos 7 firewalld 设置------------
+http://blog.csdn.net/xlgen157387/article/details/52672988
 	
 
 
