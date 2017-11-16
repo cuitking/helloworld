@@ -414,6 +414,7 @@ IPV6_PEERDNS="yes"
 IPV6_PEERROUTES="yes"
 IPV6_PRIVACY="no"
 安装centos7时，选择了minimal install的话，没有安装网络组件。ifconfig command not find   yum install net-tools   可以解决问题
+没有killall  yum install psmisc 
 centos7 安装c++，yum install gcc-c++
 
 
