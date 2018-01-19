@@ -495,7 +495,56 @@ $ tcpdump -i eth0 -nnA '!port 22'
 
 ------centos 7 firewalld 设置------------
 http://blog.csdn.net/xlgen157387/article/details/52672988
-	
+
+-----skynet 编译需要的第三方库----
+mac osx
+
+brew install readline autoconf
+centos
+
+yum install -y readline-devel autoconf
+ubuntu
+apt-get install readline-dev autoconf
+apt-get install libreadline-dev autoconf  (for ubuntu 16.04)
+
+-------------------------------------------------
+Transmission是一款跨平台的BT/PT下载工具，具体我们不再赘述，直接进入安装部分。
+本次安装使用编译安装。
+
+先来默默安装一下编译需要的环境
+yum -y groupinstall "Development Tools"
+yum -y install m4 libtool gettext libcurl-devel psmisc libevent-devel intltool gtk3-devel openssl-devel
+然后我们下载包，开始编译
+wget https://github.com/transmission/transmission-releases/raw/master/transmission-2.92.tar.xz
+tar -xf transmission-2.92.tar.xz
+cd transmission-2.92
+./configure
+make
+make install
+当然了，编译过程中你可以能会遇到各种各样的玄学问题，这就要靠你自己去解决了。
+
+查看当前Transmission版本（查看是否安装成功）
+transmission-daemon -V
+初始化程序
+transmission-daemon -g /usr/local/transmission
+killall transmission-daemon
+配置具体参数
+vim /usr/local/transmission/settings.json
+相关配置内容
+"rpc-authentication-required": true,      #开启认证登录
+"rpc-password": "密码",                   #直接修改，保存后会自动加密
+"rpc-username": "账号",                   #管理员账号
+"rpc-port": 9091,                         #管理登录端口，最好修改
+"rpc-whitelist-enabled": false,           #关闭白名单，所有IP都能登录
+加载新的配置并运行
+transmission-daemon -g /usr/local/transmission
+安装Web UI管理程序
+wget https://github.com/ronggang/transmission-web-control/raw/master/release/tr-control-easy-install.sh
+sh tr-control-easy-install.sh
+然后你就可以在浏览器打开[ip]:[port]，尽情使用Transmission了～
+参考：http://www.hndzz.cn/post/2040.html
+
+
 
 
 

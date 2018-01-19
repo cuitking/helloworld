@@ -1,0 +1,79 @@
+1.centos 安装 
+	首先安装:
+	php-5.3.10 或更高版本
+	gcc-4.4 或更高版本
+	make
+	autoconf
+	pcre (centos系统可以执行命令：yum install pcre-devel)
+	-----------------------------
+	yum install make gcc gcc-c++ kernel-devel ()
+	yum install libxml2-devel
+	yum -y install libxml2 libxml2-devel openssl openssl-devel curl-devel libjpeg-devel libpng-devel freetype-devel libmcrypt-devel
+	--configure: error: mcrypt.h not found. Please reinstall libmcrypt.
+	yum install -y epel-release
+	yum install -y libmcrypt-devel
+	
+	
+ 安装php 下载php 源码
+ cd php-5.6.22/
+./configure --prefix=/usr/local/php \
+--with-config-file-path=/etc/php \
+--enable-fpm \
+--enable-pcntl \
+--enable-mysqlnd \
+--enable-opcache \
+--enable-sockets \
+--enable-sysvmsg \
+--enable-sysvsem \
+--enable-sysvshm \
+--enable-shmop \
+--enable-zip \
+--enable-soap \
+--enable-xml \
+--enable-mbstring \
+--disable-rpath \
+--disable-debug \
+--disable-fileinfo \
+--with-mysql=mysqlnd \
+--with-mysqli=mysqlnd \
+--with-pdo-mysql=mysqlnd \
+--with-pcre-regex \
+--with-iconv \
+--with-zlib \
+--with-mcrypt \
+--with-gd \
+--with-openssl \
+--with-mhash \
+--with-xmlrpc \
+--with-curl \
+--with-imap-ssl
+
+make
+make install
+make test
+cp php.ini-development  /etc/php/php.ini
+
+另外，还需要将PHP的可执行目录添加到环境变量中。 使用Vim/Sublime打开~/.bashrc，在末尾添加如下内容：
+export PATH=/usr/local/php/bin:$PATH
+export PATH=/usr/local/php/sbin:$PATH
+source ~/.bashrc
+
+Swoole扩展安装 Swoole Installation
+
+Swoole扩展下载地址 Download 解压源码至任意目录，执行如下命令
+cd swoole-src-swoole-1.7.6-stable/
+phpize
+./configure
+sudo make
+sudo make install
+安装完成后，进入/etc/php目录下，打开php.ini文件，在其中加上如下一句：
+extension=swoole.so
+随后在终端中输入命令php -m查看扩展安装情况。如果在列出的扩展中看到了swoole，则说明安装成功。
+
+
+
+
+
+
+
+ 
