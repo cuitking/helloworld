@@ -545,6 +545,11 @@ sh tr-control-easy-install.sh
 参考：http://www.hndzz.cn/post/2040.html
 
 
+外网serverlist
+http://verjyqp.jyhd666.com:4321/svrlist.txt?edition=jyqp&clientver=0.0.12.100000&platform=1&channel=2
+
+
+
 
 
 
