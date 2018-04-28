@@ -673,6 +673,8 @@ mysql>grant all privileges on *.* to username@'hostname' identified by 'password
 其中只授予部分权限把 其中 all privileges或者all改为select,insert,update,delete,create,drop,index,alter,grant,references,reload,shutdown,process,file其中一部分。
 
 
+------go land 激活服务器收集---------
+http://idea.youbbs.org
 
 
 
