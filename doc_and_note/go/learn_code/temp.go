@@ -42,4 +42,17 @@ func main() {
 	bs := string(as)
 	bc := strconv.Itoa(as)
 	fmt.Println("--bs---", bs, bc)
+	
+	var tests string = "abcdefghijk"
+	n := len(tests)
+	for i:= 1; i < n; i++ {
+		ch := tests[i]
+		fmt.Println(i, ch)
+	}
+
+	for i, ch := range tests {
+		fmt.Println("--2---", i, ch)
+	}
+	
+	
 }
