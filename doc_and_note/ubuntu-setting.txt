@@ -676,6 +676,8 @@ mysql>grant all privileges on *.* to username@'hostname' identified by 'password
 ------go land 激活服务器收集---------
 http://idea.youbbs.org
 
+----linux去重打印
+last -f /var/log/wtmp | awk '{print $3}' | sort -n | uniq -c
 
 
 

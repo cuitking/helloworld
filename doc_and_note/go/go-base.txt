@@ -644,6 +644,21 @@ select {
 	//
 }
 
+使用select实现超时机制，select 的特点是,只要其中一个case已经完成，程序就会执行下去,而不会考虑其他case的情况
+timeout := make(chan bool, 1)
+go func() {
+	time.Sleep(le9)
+	timeout <- true
+}()
+
+select {
+	case <-ch:
+		// 从ch中读取到数据
+	case <-timeout:
+		// 一直没有从ch中读取到数据
+}
+
+
 创建一个带缓冲的channel
 c := make(chan int, 1024) 创建一个缓冲为1024的int类型channel，即时没有读取方，写入方也可以一直往channel中写入,在缓冲区被填满之前都不会阻塞
 
@@ -651,6 +666,20 @@ c := make(chan int, 1024) 创建一个缓冲为1024的int类型channel，即时�
 同时有多个可用的channel时按随机顺序处理
 可用空的select来阻塞main函数
 可设置超时
+
+单向channel
+var ch2 chan<- float64 // 单向写 float64
+var ch3 <-chan int // 单向读 int
+类型转换对于channel的意义:在单向channel和双向channel之间进行转换
+
+
+同步锁
+sync提供了两种类型的锁: sync.Mutex sync.RWMutex
+Mutex是最简单的，一个goroutine获得了Mutex后，其他goroutine就只能乖乖的等到这个goroutine释放该Mutex.
+RWMutex是经典的单写多读模型.在读锁占用的情况下，会阻止写，但不会阻止读.
+
+
+
 
 
 oop
