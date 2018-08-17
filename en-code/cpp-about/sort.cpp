@@ -1,24 +1,13 @@
 #include <iostream>
 #include "timedes.h"
+#include "algorithm.h"
 using namespace std;
 
-
-void bubble_sort(int* arr, int len) {
-	int i, j;
-	for (i = 0; i < len - 1; i++) {
-		for (j = 0; j < len - 1 -i; j++) {
-			if(arr[j] > arr[j+1]) {
-				int temp = arr[j];
-				arr[j] = arr[j+1];
-				arr[j+1] = temp;
-			}
-		}
-	}
-}
 
 int main() {
 	srand((unsigned)time(NULL));
 	timedes timed;
+	Algorithm algo;
 	int* array = new int[100000];
 	for(int i = 0; i < 100000; i++)
 		array[i] = rand();
@@ -28,13 +17,12 @@ int main() {
 	long dif = timed.getdifclock();
 	int difsecond = timed.getdifclockseconds();
 	cout << "---------dif-----" << dif << "-----dif seconds---" << difsecond << "---sizeof array---" << sizeof(array) << sizeof(array[0]) << endl;
-	timed.initclock();
-	bubble_sort(array, 100000);
+	algo.algorithm_begin();
+	algo.bubble_sort(array, 100000);
+	difsecond = algo.algorithm_end();
 	// for(int i = 0; i < 10; i++)
 	// 	cout << "++++" << array[i];
-	dif = timed.getdifclock();
-	difsecond = timed.getdifclockseconds();
-	cout << "---------dif-----" << dif << "-----dif seconds---" << difsecond << endl;
+	cout << "-----dif seconds---" << difsecond << endl;
 	delete []array;
 	return 0;
 }
