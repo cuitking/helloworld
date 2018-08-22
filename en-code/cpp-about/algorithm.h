@@ -8,6 +8,7 @@ public:
 	Algorithm();
 	~Algorithm();
 	void bubble_sort(int* arr, int count);
+	void quick_sort(int* arr, size_t left, size_t right);
 	void algorithm_begin();
 	int algorithm_end();
 private:
