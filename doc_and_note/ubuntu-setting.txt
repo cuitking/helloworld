@@ -679,6 +679,20 @@ http://idea.youbbs.org
 ----linux去重打印
 last -f /var/log/wtmp | awk '{print $3}' | sort -n | uniq -c
 
+----linux 复制不提示 覆盖
+在cp前加上一个"\"符号就不使用别名运行了，如下：
+# \cp -f sourcefile targetdir 
+
+skynet lua简单加密
+
+https://blog.csdn.net/mycwq/article/details/47406337
+
+linux 时钟处理机制
+https://www.ibm.com/developerworks/cn/linux/l-cn-clocks/
+
+skynet 文档
+https://blog.csdn.net/qq769651718/article/category/7480207
+
 
 
 

@@ -7,6 +7,54 @@
 主键：一列(或一组列),其值能够唯一区分表中的每个行.
 表中的任何列都可以作为主键，只要它满足以下条件：
 1.任意两行都不具有相同值 2.每个行都必须具有一个主键值(主键列不允许NULL值)
+主键通常定义在表的一列上，也可以一起使用多个列为主键。所有列值的组合必须是唯一的。
+(1.不更新主键列中的值 2.不重用主键列的值 3.不在主键列中使用可能会更改的值)
+sql: 结构化查询语言.(structured query language)
+
+连接数据库后
+show databases; //显示所有数据库
+drop database xxxx; //删除数据库xxx
+use xxxx; // 选择数据库xxxx  必须先使用USE 打开数据库，才能读取里面的数据
+show tables; // 获得一个数据库中所有的table列表
+show columns from xxx; // 返回一个表包含的字段名，数据类型
+describe xxx; // 和上一条命令一样
+show status; //用于显示广泛的服务器状态信息
+show create database xxxx;/show create table xxxx;// 显示创建数据库或表的语句
+show grants; //显示用户授权
+show errors; show warnings; // 
+检索数据 select
+select x from table; // 从table中检索x的数据只返回一列数据
+select x,y,z from table; // 从table中检索多个列
+select * from table; // 从table中检索所有元素的数据
+使用distinct 直返回唯一的行， distinct 用于所有列而不仅是前置它的列
+select distinct x from table; // 
+限制结果
+LIMIT 限制返回前几行
+select * from xxxx limit n; // 返回前n条数据
+LIMIT 5,5 //返回从5行开始的5行 ,支持从0行开始
+select * from xxxx limit 5,5; //
+使用完全限定的表名.
+select products.prod_name from products;
+select products.prod_name from crashcourse.products;
+排序检索数据
+子句:一个子句通常由一个关键字和所提供的数据组成。
+使用order by 子句排序.
+select prod_name from products order by prod_name;
+通常 order by使用的列将是偎显示所选择的列，用非检索的列排序数据是完全合法的
+按多个列排序
+为了按多个列排序，只要指定列名，列名之间用逗号分开即可
+select prod_id, prod_price,prod_name from products order by prod_price,prod_name;
+仅在第一列具有相同值的多个行，才对后面的列进行排序.
+指定排序方向
+默认排序为升序排列,为了进行降序排列，必须使用关键字DESC
+select prod_id, prod_pric, prod_name from products order by prod_price desc;
+
+
+
+
+
+
+
 
 
 
