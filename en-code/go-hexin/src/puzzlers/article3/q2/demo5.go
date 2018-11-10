@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"puzzlers/article3/q2/lib"
 )
 
 var name string
@@ -13,7 +14,8 @@ func init() {
 
 func main() {
 	flag.Parse()
-	hello(name)
+	lib5.Hello(name)
+	//hello(name)
 }
 
 //  go run demo4.go demo4-lib.go
