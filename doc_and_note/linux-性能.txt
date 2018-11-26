@@ -1,25 +1,65 @@
-����ƪ������Ӧ���������⡰ƽ�����ء�
-����ϵͳ����,ʹ��top����uptime������˽�ϵͳ�ĸ������.
+基础篇：到底应该怎样理解“平均负载”
+发现系统变慢,使用top或者uptime命令，来了解系统的负载情况.
 uptime
  11:44:58        up 16 days, 17:59,  6 users,          load average: 2.98, 3.47, 3.16
-// ��ǰϵͳʱ��  ϵͳ����ʱ��    	 ���ڵ�½�û�����      ��ȥ1���ӣ�5���ӣ�15���ӵ�ƽ������
+// 当前系统时间  系统运行时间    	 正在登陆用户数量      过去1分钟，5分钟，15分钟的平均负载
 
-ƽ�����ؾ���ָ��λʱ���ڣ�ϵͳ���ڿ�����״̬�Ͳ����ж�״̬��ƽ����������Ҳ����ƽ����Ծ������.
-��ν������״̬�Ľ��̣���ָ����ʹ��cpu�������ڵȴ�cpu�Ľ��̣�Ҳ����ps������ģ�����R״̬(running or Runnable)�Ľ���.
-�����ж�״̬�Ľ��������������ں�̬�ؼ������еĽ��̣�������Щ�����ǲ��ɴ�ϵģ� �����ж�״̬ʵ������ϵͳ�Խ��̺�Ӳ���豸
-��һ�ֱ�������.
-ƽ�����������������ǵ���cpu����.
-��ȡcpu������ͨ��top������ߴ��ļ�/proc/cpuinfo�л�ȡ.
+平均负载就是指单位时间内，系统处于可运行状态和不可中断状态的平均进程数，也就是平均活跃进程数.
+所谓可运行状态的进程，是指正在使用cpu或者正在等待cpu的进程，也就是ps命令看到的，处于R状态(running or Runnable)的进程.
+不可中断状态的进程则是正处于内核态关键流程中的进程，并且这些流程是不可打断的， 不可中断状态实际上是系统对进程和硬件设备
+的一种保护机制.
+平均负载最理想的情况是等于cpu个数.
+获取cpu个数，通过top命令或者从文件/proc/cpuinfo中获取.
 grep 'model name' /proc/cpuinfo | wc -l
-��ƽ�����ر�cpu�������ʱ��ϵͳ�Ѿ����ֹ���.
+当平均负载比cpu个数大的时候，系统已经出现过载.
 
-��װstress��sysstat (centos yum install stress �� yum install sysstat)
-�����no package ִ�� sudo yum install -y epel-release
-stress��һ��linuxϵͳѹ�����Թ��ߣ�����ģ��ƽ���������ߵĳ���.
-sysstat �����˳��õ�linux���ܹ��ߣ�������غͷ���ϵͳ�����ܡ�
-	mpstat ��һ�����õĶ��cpu���ܷ������ߣ�����ʵʱ�鿴ÿ��cpu������ָ�꣬�Լ�����cpu��ƽ��ָ��.
-	pidstat ��һ�����õĽ������ܷ������ߣ�����ʵʱ�鿴���̵�cpu���ڴ棬I/O���Լ��������л�������ָ��.
+安装stress和sysstat (centos yum install stress 和 yum install sysstat)
+如果报no package 执行 sudo yum install -y epel-release
+stress是一个linux系统压力测试工具，用来模拟平均负载升高的场景.
+sysstat 包含了常用的linux性能工具，用来监控和分析系统的性能。
+	mpstat 是一个常用的多核cpu性能分析工具，用来实时查看每个cpu的性能指标，以及所有cpu的平均指标.
+	pidstat 是一个常用的进程性能分析工具，用来实时查看进程的cpu，内存，I/O，以及上下文切换等性能指标.
 
-cpu �ܼ���
+cpu 密集型
+模拟cpu使用率100%的场景
 1. stress --cpu 1 --timeout 600
+
+2.在另一个终端运行uptime查看平均负载的变化情况.
+	watch -d uptime
+	
+3 在第三个终端运行 mpstat 查看cpu使用率的变化情况
+	-P ALL 表示监控所有 CPU，后面数字 5 表示间隔5秒输出一组数据
+	mpstat -P ALL 5
+4 使用pidstat来查询 cpu 使用率为100的进程
+	#间隔5秒输出一组数据
+	pidstat -u 5 1
+i/o 密集型
+1 运行stress命令，模拟I/O压力，不停地执行sync
+	stress -i 1 --timeout 600	
+2 在第二个终端运行 
+	watch -d uptime
+3 在第三个终端运行 mpstat 查看cpu使用率的变化情况
+	-P ALL 表示监控所有 CPU，后面数字 5 表示间隔5秒输出一组数据
+	mpstat -P ALL 5
+4 使用pidstat来查询 iowait 较高的进程
+	#间隔5秒输出一组数据
+	pidstat -u 5 1
+
+大量进程场景
+1 运行stress命令，模拟I/O压力，不停地执行sync
+	stress -c 8 --timeout 600	
+2 在第二个终端运行 
+	watch -d uptime
+3 在第三个终端运行 mpstat 查看cpu使用率的变化情况
+	-P ALL 表示监控所有 CPU，后面数字 5 表示间隔5秒输出一组数据
+	mpstat -P ALL 5
+4 使用pidstat来查询 iowait 较高的进程
+	#间隔5秒输出一组数据
+	pidstat -u 5 1
+总结；
+平均负载高有可能是 CPU 密集型进程导致的
+平均负载高并不一定代表 CPU 使用率高，还有可能是 I/O更忙了
+当发现负载高的时候，你可以使用 mpstat、pidstat等工具，辅助分析负载的来源。
+
+
 
