@@ -15,10 +15,15 @@ grep 'model name' /proc/cpuinfo | wc -l
 
 安装stress和sysstat (centos yum install stress 和 yum install sysstat)
 如果报no package 执行 sudo yum install -y epel-release
-stress是一个linux系统压力测试工具，用来模拟平均负载升高的场景.
+stress是一个linux系统压力测试工具，用来模拟平均负载升高的场景. (yum install stress-ng)
 sysstat 包含了常用的linux性能工具，用来监控和分析系统的性能。
 	mpstat 是一个常用的多核cpu性能分析工具，用来实时查看每个cpu的性能指标，以及所有cpu的平均指标.
 	pidstat 是一个常用的进程性能分析工具，用来实时查看进程的cpu，内存，I/O，以及上下文切换等性能指标.
+	(centos 7 pidstat 中没有%wait的问题，centos默认的sysstat版本较老，源码或者RPM 升级到11.5.5以后版本就可以了
+		rpm -ivh sysstat-12.1.1-1.x86_64.rpm
+	)
+测试centos系统吞吐量：bogo ops
+stress-ng --matrix 0 -t 60s --metrics-brief
 
 cpu 密集型
 模拟cpu使用率100%的场景
@@ -36,6 +41,7 @@ cpu 密集型
 i/o 密集型
 1 运行stress命令，模拟I/O压力，不停地执行sync
 	stress -i 1 --timeout 600	
+	stress-ng -i 1 --hdd 1 --timeout 600（--hdd表示读写临时文件）。
 2 在第二个终端运行 
 	watch -d uptime
 3 在第三个终端运行 mpstat 查看cpu使用率的变化情况
@@ -60,6 +66,16 @@ i/o 密集型
 平均负载高有可能是 CPU 密集型进程导致的
 平均负载高并不一定代表 CPU 使用率高，还有可能是 I/O更忙了
 当发现负载高的时候，你可以使用 mpstat、pidstat等工具，辅助分析负载的来源。
+
+基础篇：经常说的CPU的上下文切换时什么意思
+cpu寄存器,是cpu内置的容量小，但速度极快的内存。而程序计数器，则是用来存储cpu正在执行的指令位置，或者即将执行的下一条指令位置。
+它们都是cpu在运行任何任务之前，必须的依赖环境，也被叫做cpu上下文.
+cpu上下文切换, 就是先把前一个任务的CPU上下文（也就是cpu寄存器和程序计数器）保存起来，然后加载新任务的上下文到这些寄存器和计数器，
+最后再跳转到程序计数器所指的新位置，运行新任务。
+cpu 的上下文切换分为，进程上下文切换，线程上下文切换以及中断上下文切换。
+
+
+
 
 
 

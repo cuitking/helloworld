@@ -1,0 +1,69 @@
+1.CentOS 7 下搭建PHP环境(LAMP)
+https://blog.csdn.net/qq_25615395/article/details/79210064 
+2.apache无法解析php
+直接使用yum命令来安装apache的mod_php模块：yum install mod_php71w 
+如果没有这个安装包，可以尝试着添加一下源：
+
+rpm -Uvh https://mirror.webtatic.com/yum/el7/epel-release.rpm
+rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+--------------------- 
+作者：Joker_Daddy 
+来源：CSDN 
+原文：https://blog.csdn.net/Joker_Daddy/article/details/79180963
+启动apache systemctl start httpd
+停止apache systemctl stop httpd
+重启apache systemctl restart httpd
+
+print()语句
+int print(argument);
+<?php
+	/*
+		int print(argument)
+	*/
+	print("<p> i love the summertime. </p>");
+?>
+echo()语句
+void echo(string argu1 [,... sring arguN])
+echo 可以一次输出多个字符串
+<?php
+	$heavyweight = "Lennox Lewis";
+	$lightweight = "Floyd Mayweather";
+	echo $heavyweight,"and ", $lightweight, " are great fighters.";
+	?>
+printf()语句
+integer printf(string format [, mixed args])
+可以输出由静态文本和一个或多个变量中存储的动态信息组成的混合产物.可格式化string
+printf()
+<?php
+	printf("Bar inventory: %d bottles of tonic water.", 100);
+?>
+sprintf()语句
+string sprintf(string format[, mixed arguments])
+功能与printf()相同，但它把结果输出给一个字符串。
+$cost = sprintf("$%.2f", 43.2)
+
+PHP支持的数据类型
+1.标量数据类型: 布尔型,整型，浮点型和字符串型。
+php中字符串是一个连续的序列，php将字符串看作数组.
+$color = "maroon";
+$parser = $color[2];
+
+2.复合数据类型：数组，对象
+
+与类型有关的函数.
+1.gettype(mixed var)
+2.settype(mixed var, string type)
+3.类型标识符函数.
+boolean is_name(mixed var)
+is_array(var), is_bool(var),is_float(var)
+
+3.6 变量
+变量的声明
+变量总是以$开头，然后是变量名. 变量是区分大小写的.php中不需要显示声明变量，变量声明可以与赋值同时进行.
+所有变量都应当在使用前声明，最好带有注释.
+变量赋值有两种方法：值赋值和引用赋值.
+
+ 
+
+
+

@@ -16,6 +16,30 @@ sudo /etc/init.d/ssh start
 ssh username@192.168.1.112 username为192.168.1.112 机器上的用户，需要输入密码。
 断开连接：exit
 
+在centos7下重启服务不再是 service 服务名称 动作 这样的方式的.而是:
+
+systemctl 动作 服务名.service
+
+1. 查看sshd服务是否启动了.
+
+systemctl status sshd.service
+
+看到的这样的信息就可以确定是启动了.
+
+2. 如果没有启动,则需要启动该服务:
+
+systemctl start sshd.service
+
+3. 如果需要重启sshd服务可使得
+
+systemctl restart sshd.service
+
+4. 设置为开机启动可使用:
+
+systemctl enable sshd.service
+
+
+
 -------------------------配置eclipse for c++ in linux ubuntu 14.04--------------------------------------
 
 下载jdk，eclipse
@@ -333,12 +357,15 @@ http://qjpcpu.github.io/blog/2014/02/14/shellzi-fu-chuan-chu-li/
 
 
 ----------修改单进程最大链接数---------
-vi /etc/security/limits.conf，添加如下的行:
+1 vi /etc/security/limits.conf，添加如下的行:
 
 *   soft noproc   11000  
 *   hard noproc   11000  
 *   soft nofile   4100  
 *   hard nofile   4100 
+若设置不生效，查看包含的目录下的配置文件是否覆盖，如/etc/security/limits.d/下的文件是否覆盖了/etc/security/limits.conf设置的值 
+如果想让修改永久生效，则需要修改配置文件，如 .bash_profile、/etc/profile或/etc/security/limits.conf
+ 
 2. ulimit -n ****    ***为修改的链接数
 
 
@@ -701,6 +728,33 @@ vpsAO
 AO967895
 
 Hostname:factcat.com  ROOT pwd:bc65e8c328
+
+
+-----centos7 (CentOS7)共享文件夹找不到怎么办
+https://blog.csdn.net/JasonHector/article/details/78679135
+重新挂载共享文件夹
+sudo vmhgfs-fuse .host:/shared /mnt/hgfs
+注意格式 shared 为分享的文件名 .host前面有个空格
+
+-------linux 的iptables备份及firewalld操作介绍------
+http://blog.51cto.com/taoxie/2046569
+
+-------linux 系统之间互传文件----------
+1.文件复制：本机->远程服务器：
+scp /home/shaoxiaohu/test1.txt shaoxiaohu@172.16.18.1:/home/test2.txt
+    其中，test1为源文件，test2为目标文件，shaoxiaohu@172.16.18.1为远程服务器的用户名和ip地址。
+2.文件复制：远程服务器->本机
+scp shaoxiaohu@172.16.18.2:/home/test2.txt /home/shaoxiaohu/test1.txt
+       其中，haoxiaohu@172.16.18.2为远程服务器的用户名和ip地址， test2为源文件，test1为目标路径
+3.文件夹复制
+    在scp命令后加“-r”参数即可。
+4. 端口号
+    如果端口号有更改，需在scp 后输入：-P 端口号 （注意是大写，ssh的命令中 -p是小写）。
+
+
+几种方法来实现scp拷贝时无需输入密码
+https://blog.csdn.net/nfer_zhuang/article/details/42646849
+--------------------------------------
 
 
 
