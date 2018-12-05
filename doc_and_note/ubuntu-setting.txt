@@ -376,6 +376,12 @@ http://qjpcpu.github.io/blog/2014/02/14/shellzi-fu-chuan-chu-li/
 执行以下命令安装iptables防火墙：sudo yum install iptables-services
 4、配置iptables防火墙，打开指定端口（具体跟以前版本一样，网上介绍很多，这里不多介绍了）
 5. 设置iptables防火墙开机启动：sudo systemctl enable iptables
+
+-----开启防火墙端口------
+firewall-cmd --zone=public --add-port=8191/tcp --permanent
+firewall-cmd reload
+https://www.cnblogs.com/moxiaoan/p/5683743.html
+
 -------------------------------------
 # uname -a   # 查看内核/操作系统/CPU信息 
 # cat /etc/issue 
@@ -698,6 +704,22 @@ mysql>grant all privileges on *.* to username@'hostname' identified by 'password
 简单的用户和权限配置基本就这样了。
 
 其中只授予部分权限把 其中 all privileges或者all改为select,insert,update,delete,create,drop,index,alter,grant,references,reload,shutdown,process,file其中一部分。
+
+
+-----centos 安装 mariadb-----
+https://www.cnblogs.com/river2005/p/6813618.html
+https://www.linuxidc.com/Linux/2018-03/151403.htm  111
+
+
+chgrp -R mysql /data/mysqldb && chown -R mysql /data/mysqldb
+
+/usr/bin/mysqld_safe_helper: Can't create/write to file '/data/mysql/bogon.err' (Errcode: 13 "Permission denied")
+ 
+
+    害苦了我，多方查找才发selinx开启这呢，果断禁用，然后重启操作系统：OK！！！
+	vim /etc/sysconfig/selinux
+
+    SELINUX=disabled
 
 
 ------go land 激活服务器收集---------

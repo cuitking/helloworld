@@ -1,0 +1,51 @@
+1.编译nginx
+ 1.下载:  wget http://nginx.org/download/nginx-1.14.2.tar.gz
+ 2.解压 tar -xzf nginx-1.14.2.tar.gz
+ 3.目录 
+	conf 配置示例文件.
+	contrib/vim  vim配置文件，识别nginx 配置文件语法. cp -r contrib/vim* ~/.vim/
+	html 定位错误和默认访问文件
+	man 帮助文档
+	src nginx 源代码
+ 4.编译nginx
+	查看configure 支持选项 
+	./configure --help
+	编译并指定安装目录
+	./configure --prefix=/usr/local/nginx
+	/*
+	报错: the HTTP rewrite module requires the PCRE library
+	yum -y install zlib zlib-devel openssl openssl--devel pcre pcre-devel
+	*/
+	执行生成的中间文件在objs下. ngx_modules.c 包含了哪些模块会被编译到nginx。
+	make
+	如果是升级，还不能执行make install,需要把objs/nginx 拷贝到可执行文件目录中.
+	初次安装执行 make install.
+2.配置nginx conf语法.
+3.nginx 命令行
+nginx -c /usr/local/nginx/conf/nginx.conf 启动
+nginx -s reload
+nginx -t 测试配置文件
+nginx -v -V 查看编译配置文件.
+kill -USER2 nginx-master pid
+kill -WINCH nginx-master pid ---优雅的推出
+日志切割.
+先拷贝 cp aaa.log bak.log/ mv aaa.log bak.log
+再执行 nginx -s reopen
+
+提供重新打开日志 不会丢日志方式
+#!/bin/bash
+#设置日志文件存放目录
+logs_path="/alidata/log/nginx/access/"
+DAYS=30
+#设置pid文件
+pid_path="/alidata/server/nginx/logs/nginx.pid"
+#重命名日志文件
+mv ${logs_path}default.log ${logs_path}default-access_$(date -d "yesterday" +"%Y%m%d").log
+#向nginx主进程发信号重新打开日志
+kill -USR1 `cat ${pid_path}`
+find ${logs_path} -name "default-access_*.log" -type f -mtime +$DAYS -exec rm {} \
+
+11 搭建一个静态资源文件web.
+
+
+	

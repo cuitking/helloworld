@@ -15,3 +15,10 @@ cd nginx-1.11.3
 make
 make install
 
+-----????redis-----
+https://www.cnblogs.com/stulzq/p/9288401.html
+
+ fatal error: jemalloc/jemalloc.h: No such file or directory
+make MALLOC=libc
+
+
