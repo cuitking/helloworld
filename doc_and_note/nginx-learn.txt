@@ -46,6 +46,52 @@ kill -USR1 `cat ${pid_path}`
 find ${logs_path} -name "default-access_*.log" -type f -mtime +$DAYS -exec rm {} \
 
 11 搭建一个静态资源文件web.
+ 配置nginx
+ 打开 nginx gzip 选项
+ gzip on;
+ gzip_min_length 1; // 最小字节
+ gzip_comp_level 2; // 压缩级别
+ gzip_types text/plain ; //对什么格式的文件使用gzip 压缩.
+ 
+ autoindex 选项 提供当访问/结尾的url时，显示对应目录结构,只能访问alias文件夹下的目录结构
+ local / {
+	alias /data/vshtml/;
+	autoindex on;
+ }
+ 设置用户范围速度
+ set $limit_rate 1k;
+ local / {
+	set $limit_rate 1k;
+ }
+ 设置日志输出格式化
+ log_format main(命名) '$remote_addr - ....'
+ main 可以对不同域名写不同的日志
+12 nginx 搭建具有缓存功能的反向代理
+ 设置 listen 127.0.0.1:8080 //表示只有本地的进程才能访问这个端口
+ 配置项 upstream 设置上游服务器
+ upstream local {
+	server 127.0.0.1:8080;
+ }
+ 在location / {
+	proxy_set_header Host $host; // 用户输入的域名
+	proxy_set_header X-Real-IP $remote_addr; // 将远端客户端的ip传给上游服务器. proxy_set_header 
+											// 是将远端客户端的变量取出传给上游服务器处理.
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	
+	proxy_pass http://local;  //反向代理到 upstream 上游服务器.
+	//这些可以在官网的doc中 nginx_http_proxy_module 中找到
+ }
+ 配置缓存服务器.
+  配置缓存文件写在哪个目录下 
+  proxy_cache_path  /tmp/nginxcache levels=1:2 keys_zone=my_cache:10m max_size=10g
+		inactive=60m use_temp_path=off;
+  在需要使用的server中配置
+  location / {
+	proxy_cache my_cache;
+  }
+ 
+
+
 
 
 	
