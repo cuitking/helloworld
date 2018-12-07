@@ -88,8 +88,27 @@ find ${logs_path} -name "default-access_*.log" -type f -mtime +$DAYS -exec rm {}
   在需要使用的server中配置
   location / {
 	proxy_cache my_cache;
+	
+	proxy_cache_key $host$uri$is_args$args;
+	proxy_cache_valid 200 304 302 1d;
+
+	proxy_pass http://local;
   }
- 
+ 13 使用goAccess可视化监控access日志.
+   1.下载源码包:wget https://tar.goaccess.io/goaccess-1.3.tar.gz
+   2. tar -xzvf goaccess-1.3.tar.gz
+   3. $ cd goaccess-1.3/
+   4 ./configure --enable-utf8 --enable-geoip=legacy  
+   ./configure --enable-utf8 --enable-geoip=legacy --with-openssl
+   ( configure 报错 *** Missing development files for the GeoIP library,    
+    yum install GeoIP-devel
+	 安装openssl:  yum -y install openssl openssl-devel
+	)
+   5 .make
+   6 .make install
+   安装完成检查版本
+   goaccess --v
+   
 
 
 
