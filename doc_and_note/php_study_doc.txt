@@ -14,6 +14,46 @@ rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 停止apache systemctl stop httpd
 重启apache systemctl restart httpd
 
+-----centos 安装 nginx php------
+https://www.cnblogs.com/jecyhw/p/5504855.html
+
+1.下载php7 
+wget http://ar2.php.net/distributions/php-7.0.6.tar.gz
+解压
+构建
+./configure --enable-fpm
+报错：
+checking libxml2 install dir... no
+checking for xml2-config path... 
+configure: error: xml2-config not found. Please check your libxml2 installation.
+[root@XKWB3403 php-5.3.8]# rpm -qa |grep  libxml2
+libxml2-2.6.26-2.1.12
+libxml2-python-2.6.26-2.1.12
+重新安装libxml2和libxml2-devel包
+yum install libxml2
+yum install libxml2-devel -y
+
+make
+make install
+
+启动php-fpm
+php-fpm
+
+在nginx中添加配置.
+location ~ \.php$ {
+	root /var/www/; #指定php的根目录
+	fastcgi_pass 127.0.0.1:9000; #php-fpm的默认端口是9000
+	fastcgi_index index.php
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include fastcgi_params;
+}
+
+报错:
+FastCGI sent in stderr: "Primary script unknown" while reading response header from upstream,
+
+------sublime text 3 配置php开发环境----------
+https://blog.csdn.net/doubleface999/article/details/55798749
+
 print()语句
 int print(argument);
 <?php
@@ -62,6 +102,85 @@ is_array(var), is_bool(var),is_float(var)
 变量总是以$开头，然后是变量名. 变量是区分大小写的.php中不需要显示声明变量，变量声明可以与赋值同时进行.
 所有变量都应当在使用前声明，最好带有注释.
 变量赋值有两种方法：值赋值和引用赋值.
+
+数组array
+使用foreach遍历
+$linkbs = array('the appache web server' => "www.apache.org", 
+					"Apress" => "www.apress.com",
+					"The php scripting Language " => "www.php.net");
+foreach ($linkbs as $title => $link) {
+	echo "<a href=\"http://$link\">$title</a><br />";
+}
+
+函数
+默认参数必须位于参数列表末尾，且为常数表达式。
+function calcSalesTax($price, $tax=.0675)
+可以指定某个参数为可选参数,这些函数通常需要放在参数列表末尾并指定其为空值.
+function calculate($price, $price2="", $price3)
+
+数组array
+每个数组的实体包含两个项: key 和 value.可以通过查询键来获取其相应的值.这些键可以是数值键或关联键.
+数值键与值没有直接联系,它们只是值在数组中的位置.
+关联键与值有一定的关系,而不是值在数组中的位置.
+php中数值索引数组以位置0起始.
+$states = array("OH" => "ohio", "PA" => "pennsylvania", "NY“ => "NEW YORK”);
+创建数组
+1.非正式的
+$state[0] = "aaaa";
+echo $state[0];
+可以添加其他值
+$state[1] = "bbbb";
+$state[2] = "cccc";
+....
+如果数组索引是递增的，还可以在创建时省略索引.
+$state[] = "bbbbb"
+$state[] = "cccc"
+....
+2.使用array()创建数组
+$languages = array("spain" => "spanish", "Ireland" => "Gaelic", "United States" => "English");
+用list()提取数组.
+list()和array()类似,只是它可以在一次操作中从一个数组内提取多个值，同时为多个变量赋值.
+从数据库或文件中提取信息时，这种构造尤其有用.
+//打开 users.txt 文件
+$users = fopen("users.txt", "r");
+//若未到达EOF，则获取下一行
+while ($line = fgets($users, 4096)) {
+	//用explode()分离数据片段
+	list($name, $occupation, $color) = explode("|", $line);
+	//格式化数据并输出
+	printf("Name: %s <br />", $name);
+	printf("occupation: %s <br />", $occupation);
+	printf("Favorite color: %s <br />", $color);
+}
+fclose($users);
+range()函数是一个创建数组的简单方法.并会使用low到high范围内的整数值填充数组.
+$dle = range(1,6);
+可以设置步长.
+$even = range(0,20,2);
+测试数组
+boolean is_array(mixed variable)
+打印数组
+boolean print_r();
+添加和删除数组元素
+在数组头添加元素
+int array_unshift(array, var, ...)
+在数组尾部添加元素
+int array_push(array, var, ...)
+从数组头删除
+mixed array_shift(array)
+从数组尾部删除
+mixed array_pop(array)
+搜索数组
+boolean in_array(mixed needle, array haystack [, boolean strict])
+$state = "Ohid";
+	$states = array("California", "Hawaii", "Ohid", "New York");
+	if (in_array($state, $states)) 
+		echo "Not to worry, $state is smoke-free!";
+
+搜索关联数组键
+boolean array_key_exists(mixed key, array array)
+搜索关联数组值
+mixed array_search(mixed needle, array haystack [, boolean strict])
 
  
 

@@ -108,6 +108,62 @@ find ${logs_path} -name "default-access_*.log" -type f -mtime +$DAYS -exec rm {}
    6 .make install
    安装完成检查版本
    goaccess --v
+   执行goaccess 
+   goaccess access.log -o ../html/report.html --real-time-html --time-format='%H:%M:%S' --date-format='%d/%b/%Y' --log-format=COMBINED
+   显示 WebSocket server ready to accept new client connections
+   在nginx中配置
+   location /report-p8080.html {
+	alias /usr/local/nginx/html/report-p8080.html;
+   }
+   ---默认goaccess在开启实时real-time-html后会监听端口7890的websocket，如果服务器不允许请求7890端口，
+   你就看不到那个页面是实时更新的——你会发现访问的页面最后更新时间始终不变。这一点人很多忽略了，
+   很多人以为是哪个生成html静态文件是实时更新的，其实根本不是，那个文件本身一旦生成就不动了，
+   真正更新的实时内容是从websocket过来的
+14  从网络原理来看SSL 安全协议
+	SSL --- Secure Socket Layer
+	TLS --- Transport Layer Secure
+    ssl/TLS 作用于 OSI模型的表示层, tcp/ip模型的应用层，通过握手，交换秘钥，告警，对称加密的应用数据，记录等
+	过程.
+	TLS安全密码套件配置
+	TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	ECDHE ---秘钥交换 RSA---身份验证  AES --算法 128 ---强度 GCM ---模式 SHA256 ---MAC或PRF
+	密码(AES_128_GCM)
+15 对称加密算法和非对称加密算法
+	对称加密 使用同一个密文进行加密解密.
+	非对称加密 使用公钥加密，私钥解密 
+16 SSL的证书的公信力是如何保证
+17 SSL 协议握手时, nginx的性能瓶颈在哪?
+	TLS 通讯过程
+		1.验证身份
+		2.达成安全套件共识
+		3.传递秘钥
+		4.加密通讯
+18 用免费的SSL证书实现一个https 站点
+	安装工具 yum install python2-certbot-nginx
+	
+19 基于OpenResty 用lua语言实现简单的服务
+	1.前往OpenResty官网 
+	2.下载源码 wget https://openresty.org/download/openresty-1.13.6.2.tar.gz
+	3.编译openresty 
+	 ./configure 
+	 make
+	 make install
+	4.添加lua代码.
+	在nginx.conf 中添加
+	location /lua {
+		default_type text/html;
+		content_by_lua 'ngx.say("User-Agent: ", ngx.req.get_headers()["User-Agent"])';
+		
+	}
+20.nginx的请求处理流程
+21.nginx的进程结构
+   nginx 有单进程结构和多进程结构，单进程结构适用于调试环境，多进程结构适用于生产环境.
+   包括master进程，worker进程，cache manager, cache loader(缓存载入)
+   master进程用来管理所有的worker进程，各进程之间通讯采用共享内存. 通常配置cpu核数相等的worker进程数.
+22.nginx 进程结构实例演示.
+	
+23.
+	
    
 
 

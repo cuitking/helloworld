@@ -379,7 +379,7 @@ http://qjpcpu.github.io/blog/2014/02/14/shellzi-fu-chuan-chu-li/
 
 -----开启防火墙端口------
 firewall-cmd --zone=public --add-port=8191/tcp --permanent
-firewall-cmd reload
+firewall-cmd --reload
 https://www.cnblogs.com/moxiaoan/p/5683743.html
 
 -------------------------------------
@@ -746,6 +746,8 @@ https://blog.csdn.net/qq769651718/article/category/7480207
 
 https://www.vpsao.com/hub/clientarea.php?action=productdetails&id=1590
 
+Pornhub
+
 vpsAO
 AO967895
 
@@ -777,6 +779,11 @@ scp shaoxiaohu@172.16.18.2:/home/test2.txt /home/shaoxiaohu/test1.txt
 几种方法来实现scp拷贝时无需输入密码
 https://blog.csdn.net/nfer_zhuang/article/details/42646849
 --------------------------------------
+dos2unix  yum install dos2unix
+
+----启动redis-server-----------
+redis-server /usr/local/redis/etc/redis.conf > run-2018-12-13.log 2>&1 &   //将运行日志保存在 run-2018-12-13.log 中
+
 
 
 
