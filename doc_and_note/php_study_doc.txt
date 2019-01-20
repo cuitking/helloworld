@@ -182,6 +182,55 @@ boolean array_key_exists(mixed key, array array)
 搜索关联数组值
 mixed array_search(mixed needle, array haystack [, boolean strict])
 
+面向对象php
+面向对象属性重载
+修改方法 __set()
+boolean __set(string property_name, mixed value_to_assign)
+接受一个属性名和相应的值作为输入.
+访问方法或获取方法
+boolean __get(string property-name)
+
+类中的常量
+class mathFunctions 
+{
+	const PI = '3.1415926';
+	const E = '2.71';
+}
+echo mathFunctions::PI;
+构造函数
+php通过名称__construct来识别构造函数
+function __construct([argument1, argument2, ..., ])
+{}
+php不会自动调用父类的构造函数，必须用parent关键字显式地调用
+class Employee
+{ function __construct(){}}
+class Manager extends Employee
+{
+	function __construct()
+	{
+		parent::__construct();
+		...
+	}
+}
+调用与实例化对象没有关系的构造函数
+classname::__construct()
+
+析构函数
+__destruct()
+
+instanceof 关键字
+确定一个对象是否是一个类的实例
+
+对象克隆
+destinationObject = clone targetObject;
+__clone()方法
+可以在对象中定义一个__clone()方法来调整对象的克隆属性.
+
+
+
+
+
+
  
 
 

@@ -38,6 +38,9 @@ systemctl restart sshd.service
 
 systemctl enable sshd.service
 
+生成ssh公钥和私钥
+ssh-keygen -t rsa
+ssh-keygen -t rsa -C "youremail@example.com"
 
 
 -------------------------配置eclipse for c++ in linux ubuntu 14.04--------------------------------------
@@ -180,6 +183,11 @@ http://www.01happy.com/git-resolve-conflicts/
 .tar.gz     格式解压为          tar   -zxvf   xx.tar.gz
 .tar.bz2   格式解压为          tar   -jxvf    xx.tar.bz2
 解压到指定目录: -C 
+
+---创建压缩文件
+tar -czvf homebackup.tar.gz /home
+---解压.gz文件
+tar -xzvf homebackup.tar.gz -C /home/new
 
 -------------------ubuntu 源码安装lua5.1.5-----------
 http://blog.csdn.net/yanggd1987/article/details/46681687 教程为centos环境
@@ -783,6 +791,16 @@ dos2unix  yum install dos2unix
 
 ----启动redis-server-----------
 redis-server /usr/local/redis/etc/redis.conf > run-2018-12-13.log 2>&1 &   //将运行日志保存在 run-2018-12-13.log 中
+
+---查看文件夹大小
+du -h ./xxx
+
+---查看文件夹挂载的位置
+1.df 文件夹路径
+2.mount -l
+3.查看/etc/mtab文件
+
+
 
 
 
