@@ -151,4 +151,17 @@ mysql> GRANT ALL PRIVILEGES ON *.* TO 'myuser'@'%' IDENTIFIED BY 'mypassword' WI
 mysql> GRANT ALL PRIVILEGES ON *.* TO 'myuser'@'192.168.1.3' IDENTIFIED BY 'mypassword’ WITH GRANT OPTION;
 这里主要推荐使用授权法，最好参照《Mysql新建用户和数据库并授权》新建数据库和用户，并且授权访问单个数据库
 （注意：以上*.*是授权访问全部数据库权限，“DBNAME.*”为指定数据库权限，DBNAME为要授权的数据库名），而不是使用root权限。
+with grant option 是可以授权其他的用户.
+四.删除授权.
+drop user root@'192.168.6.124';
+
+----创建用户-----
+方法一：
+1. mysql -uroot -p123456
+2. create user 'youruser'@'host' identified by 'password';
+
+
+
+
+
 
