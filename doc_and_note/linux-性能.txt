@@ -74,4 +74,166 @@ cpu上下文切换, 就是先把前一个任务的CPU上下文（也就是cpu寄
 最后再跳转到程序计数器所指的新位置，运行新任务。
 cpu 的上下文切换分为，进程上下文切换，线程上下文切换以及中断上下文切换。
 
+pidstat ,查看 cpu和进程上下文切换情况 默认显示进程指标，-t 显示线程指标
+pidstat -w -u 1
+-w 参数表示输出进程切换指标， -u 参数表示输出cpu 使用指标
+
+vmstat 1 1：分析内存使用情况、cpu上下文切换和中断的次数。cs每秒上下文切换的次数，in每秒中断的次数，r运行或等待cpu的进程数，b中断睡眠状态的进程数。
+pidstat -w 5：查看每个进程详细情况。cswch（每秒自愿）上下文切换次数，如系统资源不足导致，nvcswch每秒非自愿上下文切换次数，如cpu时间片用完或高优先级线程
+案例分析：
+sysbench：多线程的基准测试工具，模拟context switch
+终端1：sysbench --threads=10 --max-time=300 threads run
+终端2：vmstat 1：sys列占用84%说明主要被内核占用，ur占用16%；r就绪队列8；in中断处理1w，cs切换139w==>等待进程过多，频繁上下文切换，内核cpu占用率升高
+终端3：pidstat -w -u 1：sysbench的cpu占用100%（-wt发现子线程切换过多），其他进程导致上下文切换
+watch -d cat /proc/interupts ：查看另一个指标中断次数，在/proc/interupts中读取，发现重调度中断res变化速度最快
+总结：cswch过多说明资源IO问题，nvcswch过多说明调度争抢cpu过多，中断次数变多说明cpu被中断程序调用
+
+
+05 
+centos 7 安装 apache bench 
+yum install hpptd-tools
+
+安装docker
+1.移除旧的版本
+sudo yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-selinux \
+                  docker-engine-selinux \
+                  docker-engine
+2. 安装一些必要的工具
+ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+3. 添加软件源信息
+ sudo yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+4.更新缓存
+ sudo yum makecache fast
+5.安装docker ce
+ sudo yum -y install docker-ce
+6.启动docker 后台服务
+ sudo systemctl start docker
+ 7 运行测试
+ docker run hello-world
+使用脚本安装docker
+1 sudo yum update
+2 curl -fsSL https://get.docker.com -o get-docker.sh
+3 sh get-docker.sh
+4 sudo systemctl start docker
+--删除docker ce
+$ sudo yum remove docker-ce
+$ sudo rm -rf /var/lib/docker
+
+-----
+1 在第一个终端执行 下面的命令来运行nginx和php应用
+$ docker run --name nginx -p 10000:80 -itd feisky/nginx
+$ docker run --name phpfpm -itd --network container:nginx feisky/php-fpm
+2 测试nginx是否正常
+curl http://192.168.6.203:10000/
+3 测试nginx的性能，在第二个终端运行
+# 并发 10 个请求测试 Nginx 性能，总共测试 100 个请求
+$ ab -c 10 -n 100 http://192.168.0.10:10000/
+This is ApacheBench, Version 2.3 <$Revision: 1706008 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, 
+...
+Requests per second:    11.63 [#/sec] (mean)
+Time per request:       859.942 [ms] (mean)
+...
+--继续运行
+$ ab -c 10 -n 10000 http://10.240.0.5:10000/
+
+分析是php-fpm 的哪个函数调导致cpu使用率上升
+# -g 开启调用关系分析，-p 指定 php-fpm 的进程号 21515
+$ perf top -g -p 21515
+yum install perf 安装perf
+
+问题 centos 7 中perf top -g -p pid 不能看到函数名，只能看到十六进制的东西
+原因：Failed to open /usr/lib/x86_64-linux-gnu/libxml2.so.2.9.4, continuing without symbols perf无法找到待分析进程所依赖的库，local system和docker容器的依赖环境不一致导致的
+解决办法:
+1 在centos 系统中 运行 perf record -g -p pid  执行一会儿(比如10秒) 按ctrl +c 停止
+2 把生成的 perf.data 拷贝到容器里面分析
+3 docker cp perf.data phpfpm:/tmp
+4 docker exec -i -t phpfpm bash  
+$ cd /tmp
+$ apt-get update && apt-get install -y linux-perf linux-tools procps
+$ perf_4.9 report
+--在docker 中退出bash -- exit---
+part 6 模拟short进程 导致cpu过高
+1 运行docker中的nginx和php
+ $ docker run --name nginx -p 10000:80 -itd feisky/nginx:sp
+ $ docker run --name phpfpm -itd --network container:nginx feisky/php-fpm:sp
+2 运行测试
+ # 192.168.0.10 是第一台虚拟机的 IP 地址
+	$ curl http://192.168.0.10:10000/
+	It works!
+3.启动top查看 cpu使用情况
+ 发现系统cpu很高， 查看进程列表没有cpu使用率很高的进程
+4.使用pidstat 1 没发现cpu高的进程
+5.使用top 发现tasks 中running 进程多,
+6.使用 pidstat 发现进程pid在变化
+  进程pid变化的原因：
+  1.进程不停地崩溃重启， 进程在退出后可能又被监控系统重启了
+  2.这些进程都是短时进程，也就是在其他应用内部通过exec调用外部命令，这些命令一般都只运行很短的时间就结束，很难用top这种间隔比较长的工具发现
+7.查找父进程使用 pstree | grep stress
+   centos 7 安装pstree  yum install psmisc
+8.分析问题
+# 拷贝源码到本地
+$ docker cp phpfpm:/app .
+
+# grep 查找看看是不是有代码在调用 stress 命令
+$ grep stress -r app
+app/index.php:// fake I/O with stress (via write()/unlink()).
+app/index.php:$result = exec("/usr/local/bin/stress -t 1 -d 1 2>&1", $output, $status);
+9正是由于权限错误，大量的 stress 进程在启动时初始化失败，进而导致用户cpu使用率高。
+
+10 使用perf来分析
+ # 记录性能事件，等待大约 15 秒后按 Ctrl+C 退出
+$ perf record -g
+
+# 查看报告
+$ perf report
+
+在容器外面把分析记录保存，到容器里面查看结果
+操作：
+（1）在centos系统上运行 perf record -g ，执行一会儿按ctrl+c停止
+（2）把生成的perf.data（通常文件生成在命令执行的当前目录下，当然可以通过find | grep perf.data或 find / -name perf.data查看路径）文件拷贝到容器里面分析：
+docker cp perf.data phpfpm:/tpm
+docker exec -i -t phpfpm bash
+cd /tmp/
+apt-get update && apt-get install -y linux-perf linux-tools procps
+perf_4.9 report
+
+part 7  系统中出现大量不可中断进程和僵尸进程怎么办？
+
+top 中S列的状态
+R  是 Running 或 Runnable 的缩写，表示进程在cpu就绪的队列中，正在运行或者正在等待运行
+D  是 Disk Sleep 的缩写，也就是不可中断状态睡眠（Uninterruptible Sleep) 一般表示进程正在跟硬件交互，并且交互过程不允许被其他进程或中断打断。
+Z 是 Zombie 的缩写，表示僵尸进程，也就是进程实际上已经结束了，但是父进程还没有回收它的资源
+S 是 Interruptible Sleep 的缩写，也就是可中断状态睡眠，表示进程因为等待某个事件而被系统挂起。当进程等待的事件发生时，它会被唤醒并进入R状态.
+I 是 Idle的缩写， 也就是空闲状态，用在不可中断睡眠的内核线程上。D状态的进程会导致平均负债升高，I状态的进程却不会.
+除了上面五个状态，还有下面两个状态
+T 或 t 是 STOPPPED 或 TraceDE 的缩写, 表示进程处于暂停状态或者跟踪状态. 向一个进程发送SIGSTOP信号,它就会响应这个信号变成暂停状态(stopped)；
+再向它发送SIGCONT进程又会恢复运行.
+当你使用调试器调试一个进程时，在使用断点中断进程后，进程就会变成跟踪状态，
+另一个是X ，就是Dead的缩写，表示进程已经消亡，不会在top中看到
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

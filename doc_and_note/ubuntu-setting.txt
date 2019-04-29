@@ -822,6 +822,7 @@ sysctl -w net.ipv4.tcp_tw_recycle=1
 //表示开启TCP连接中TIME-WAIT sockets的快速回收
 
 ----SYN flooding处理----
+https://blog.51cto.com/xujpxm/1846095
 # vim /etc/sysctl.conf 
 net.ipv4.tcp_syncookies = 1
 net.ipv4.tcp_tw_reuse = 1
@@ -852,6 +853,23 @@ dmesg -t
 在终端断开ssh连接而不关闭终端的方法
 1.Ctrl + D
 2.输入 logout
+
+centos 7 安装 apache bench 
+yum install hpptd-tools
+
+
+redis Can’t save in background: fork: Cannot allocate memory 解决及原理
+https://blog.csdn.net/zqz_zqz/article/details/53384854
+
+彻底的解决方式
+编辑文件 /etc/sysctl.conf 添加：
+vm.overcommit_memory=1
+执行sysctl -p使其生效；
+
+
+
+
+
 
 
 
