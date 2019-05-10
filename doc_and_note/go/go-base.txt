@@ -727,11 +727,14 @@ goroutine只是由官方实现的超级线程池而已，不过话说回来，�
 并发主要由切换时间片来实现同时运行，在并行则是直接利用多核实现多线程的运行，但go可以设置使用核数，
 以发挥多核计算机的能力
 goroutine 奉行通过通信来共享内存，而不是共享内存来通信
+这个调度器是 Go 语言运行时系统的重要组成部分，它主要负责统筹调配go并发编程模型中的三个主要元素：
+G (goroutine), p (Processor) 和 M(machine 的缩写)
+
 
 channel
 通道是go语言自带的唯一一个并发安全的类型.
 channel 是进程内的通信方式
-channel 是goruntine沟通的桥梁，大都是阻塞同步的
+channel 是goruntine沟通的桥梁，大都是阻塞同步的，一般被用来在不同的goroutine之间传递数据.
 通过make创建， close关闭
 channel是引用类型
 可以使用for range来迭代不断操作channel
@@ -833,6 +836,13 @@ func main() {
 		fmt.Println(a, " LESS 2")
 	}
 }
+
+原子操作atomic
+atomic.AddUint32(&num, ^uint32(-N-1))
+其中N代表由负整数表示的差量.首先要把差量的绝对值减去1，然后再把得到的这个无类型的整数常量，转换成uint32类型的值.
+在这个值之上做按位异或操作.
+
+
 
 
 
