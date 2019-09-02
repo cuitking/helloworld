@@ -1,0 +1,7 @@
+1. 先看这个简明教程，书上的内容太多了 https://github.com/wsdjeg/lua-tutorial-cn
+	1.阶段 看到函数那
+	2.阶段 看到table
+	3.阶段 看到元表
+	4.阶段 看到面向对象那(调试和垃圾回收，先不看，调试一般不用，垃圾回收根据项目需求调整,实际默认的机制就够了)
+	练手的内容，我再找
+2. 官方文档（用于查阅） https://cloudwu.github.io/lua53doc/manual.html

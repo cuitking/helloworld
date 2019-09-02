@@ -42,6 +42,9 @@ systemctl enable sshd.service
 ssh-keygen -t rsa
 ssh-keygen -t rsa -C "youremail@example.com"
 
+ssh root@192.168.6.211 -p 22 -i /Users/xxxx/.ssh/id_rsa.rsa     连接远程服务器commond
+
+
 
 -------------------------配置eclipse for c++ in linux ubuntu 14.04--------------------------------------
 
@@ -371,6 +374,10 @@ http://qjpcpu.github.io/blog/2014/02/14/shellzi-fu-chuan-chu-li/
 *   hard noproc   11000  
 *   soft nofile   4100  
 *   hard nofile   4100 
+ 
+@root soft core unlimited //产生dump文件
+@root hard core unlimited //产生dump文件
+
 若设置不生效，查看包含的目录下的配置文件是否覆盖，如/etc/security/limits.d/下的文件是否覆盖了/etc/security/limits.conf设置的值 
 如果想让修改永久生效，则需要修改配置文件，如 .bash_profile、/etc/profile或/etc/security/limits.conf
  
@@ -797,6 +804,11 @@ dos2unix  yum install dos2unix
 ----启动redis-server-----------
 redis-server /usr/local/redis/etc/redis.conf > run-2018-12-13.log 2>&1 &   //将运行日志保存在 run-2018-12-13.log 中
 
+nohup xxxx > out.file 2>&1 &
+
+ps -ef | grep xxxx| awk '{print $2}' | xargs kill -9  // 杀死xxxx 进程
+
+
 ---查看文件夹大小
 du -h ./xxx
 
@@ -865,6 +877,75 @@ https://blog.csdn.net/zqz_zqz/article/details/53384854
 编辑文件 /etc/sysctl.conf 添加：
 vm.overcommit_memory=1
 执行sysctl -p使其生效；
+
+centos 7 安装vsftpd(ftp服务器)
+1. yum install -y vsftpd
+2 修改配置文件
+ vi /etc/vsftpd/vsftpd.conf
+ 不允许匿名登录
+ anonymous_enable=NO
+ 允许使用本地帐户进行FTP用户登录验证
+ local_enable=YES
+ 使用户不能离开主目录
+ 当chroot_list_enable=YES，chroot_local_user=YES时，
+ 在/etc/vsftpd.chroot_list文件中列出的用户，可以切换到其他目录；
+ 未在文件中列出的用户，不能切换到其他目录
+ chroot_local_user=YES
+ chroot_list_enable=YES
+ chroot_list_file=/etc/vsftpd/chroot_list
+ 配置文件最后添加
+ allow_writeable_chroot=YES
+ 如果/etc/vsftpd/chroot_list不存在，则需要创建该文件
+ vi /etc/vsftpd/chroot_list
+ 设定支持ASCII模式的上传和下载功能。
+ ascii_upload_enable=YES
+ ascii_download_enable=YES 
+ 最后 :wq保存修改，重启vsftpd
+ systemctl restart vsftpd.service
+ 新建ftp用户
+ useradd -d /var/ftp/public_root -g ftp -s /sbin/nologin ftpuser
+ 修改该FTP用户密码
+ passwd ftpuser  
+
+--------------------linux 查看密码-------------------
+在linux中，有时忘记自己的svn的用户名和密码，可以这样查看。
+
+cd cd ~/.subversion/auth/svn.simple
+
+在这个目录下可以看到类似a2dc58b7668dba51b692081cc32ac86e的文件
+
+vim打开这样的文件就可以看到用户名和密码
+--------Windows-------
+(1) 首先,先找到你保存路径，默认是路径
+C:\Users\Administrator\AppData\Roaming\Subversion\auth\svn.simple
+(2) 点击连接下载软件到上述目录
+http://www.leapbeyond.com/ric/TSvnPD/
+
+-----配置svn 服务器 -------
+https://blog.csdn.net/u011781521/article/details/80200583
+
+关闭selinux 
+setenforce 0
+
+
+-----centos 7 设置时间时区-----
+from http://blog.itnmg.net/centos-7-time-date/
+
+yum install ntp //安装ntp服务
+systemctl enable ntpd //开机启动服务
+systemctl start ntpd //启动服务
+timedatectl set-timezone Asia/Shanghai //更改时区
+timedatectl set-ntp yes //启用ntp同步
+ntpq -p //同步时间
+
+timedatectl   查看时间设置详情
+timedatectl list-timezones 列出所有时区
+timedatectl set-time "YYYY-MM-DD HH:MM:SS"   设置时间
+
+mac os x 安装gnu-sed等命令行工具 gsed
+https://blog.csdn.net/xicikkk/article/details/52559433
+
+
 
 
 

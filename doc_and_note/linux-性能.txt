@@ -12,6 +12,9 @@ uptime
 获取cpu个数，通过top命令或者从文件/proc/cpuinfo中获取.
 grep 'model name' /proc/cpuinfo | wc -l
 当平均负载比cpu个数大的时候，系统已经出现过载.
+查看内核版本
+cat /proc/version
+uname -a
 
 安装stress和sysstat (centos yum install stress 和 yum install sysstat)
 如果报no package 执行 sudo yum install -y epel-release
