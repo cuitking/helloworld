@@ -899,7 +899,14 @@ centos 7 安装vsftpd(ftp服务器)
  vi /etc/vsftpd/chroot_list
  设定支持ASCII模式的上传和下载功能。
  ascii_upload_enable=YES
- ascii_download_enable=YES 
+ ascii_download_enable=YES  
+
+# 配置与实体用户相关的信息，可写入
+userlist_enable=YES
+userlist_deny=NO
+userlist_file=/etc/vsftpd/user_list
+之所以配置以上信息项，是因为我想只让某些人可以使用 FTP，而直接添加的用户默认不可使用 FTP 这个服务。
+如果我们想查看更多有关这个文件的配置说明，可以通过 man 5 vsftpd.conf 命令进行查看。
  最后 :wq保存修改，重启vsftpd
  systemctl restart vsftpd.service
  新建ftp用户
