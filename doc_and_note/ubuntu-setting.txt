@@ -945,6 +945,10 @@ timedatectl set-time "YYYY-MM-DD HH:MM:SS"   设置时间
 mac os x 安装gnu-sed等命令行工具 gsed
 https://blog.csdn.net/xicikkk/article/details/52559433
 
+centos 7   crul/curl.h 没有找到文件或文件夹
+yum -y instll curl-devel
+
+
 
 
 
