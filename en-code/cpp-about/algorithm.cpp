@@ -32,6 +32,7 @@ void Algorithm::bubble_sort(int* arr, int count) {
 
 
 
+
 /*快速排序
 1)算法
 A.从序列中找出一个元素作为基准；

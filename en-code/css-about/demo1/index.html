@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Document Hello world!!</title>
+</head>
+<body>
+	<img src="./timg.jpg">
+	<style type="text/css">
+		body{
+			text-align: center; /*居中*/
+		}
+		img{
+			border-radius: 50%; /*设置图像圆角*/
+			transition: all 0.5s; /*设置动画时间*/
+			-webkit-transition: all 0.5s; /*设置动画时间*/
+			/*
+				属性前缀 为了解决不同浏览器之间的兼容性问题
+				具体哪些属性需要使用前缀 可以在http://caniuse.com/ 查看;
+			*/
+			cursor: pointer;  /*设置鼠标在图片上的外形*/
+		}
+		img:hover{
+			transform: scale(1.1); /*设置鼠标移动进入图片区域的动画*/
+		}
+	</style>
+</body>
+</html>
