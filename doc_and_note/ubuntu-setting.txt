@@ -956,6 +956,17 @@ centos 7   crul/curl.h 没有找到文件或文件夹
 yum -y instll curl-devel
 
 
+-----node.js  执行 npm run build---
+报错
+Error: Missing binding /home/go/src/github.com/pipe/console/node_modules/node-sass/vendor/linux-x64-72/binding.node Node Sass could not find a binding for your current environment: Linux 64-bit with Node.js 12.x
+
+依次执行：
+rm node_module 
+npm install
+npm rebuild node-sass
+
+
+
 
 
 
