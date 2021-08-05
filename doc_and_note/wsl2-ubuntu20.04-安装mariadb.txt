@@ -1,0 +1,37 @@
+0.更换镜像源
+https://developer.aliyun.com/mirror/
+
+deb http://mirrors.aliyun.com/ubuntu/ focal main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ focal main restricted universe multiverse
+
+deb http://mirrors.aliyun.com/ubuntu/ focal-security main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ focal-security main restricted universe multiverse
+
+deb http://mirrors.aliyun.com/ubuntu/ focal-updates main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ focal-updates main restricted universe multiverse
+
+deb http://mirrors.aliyun.com/ubuntu/ focal-proposed main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ focal-proposed main restricted universe multiverse
+
+deb http://mirrors.aliyun.com/ubuntu/ focal-backports main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ focal-backports main restricted universe multiverse
+
+
+1 sudo apt update
+2 sudo apt install mysql-server
+查看mariadb服务状态
+3 sudo service mysql status
+4 sudo mysql_secure_installation 
+-----------------------------
+1. Press y|Y for Yes, any other key for No: N (选择N ,不会进行密码的强校验)
+2. 输入密码
+3. Remove anonymous users? (Press y|Y for Yes, any other key for No) : N (选择N，不删除匿名用户)
+4. Disallow root login remotely? (Press y|Y for Yes, any other key for No) : N (选择N，允许root远程连接)
+5. Remove test database and access to it? (Press y|Y for Yes, any other key for No) : N (选择N，不删除test数据库)
+6. Reload privilege tables now? (Press y|Y for Yes, any other key for No) : Y (选择Y，修改权限立即生效)
+
+https://www.cnblogs.com/2020javamianshibaodian/p/12920243.html
+
+
+
+
